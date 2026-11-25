@@ -183,6 +183,34 @@ h1, h2 {
     border-color: #2563eb;
 }
 
+.pin-button {
+    display: inline-grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    padding: 6px;
+    color: #aeb6c2;
+    border-color: transparent;
+    background: transparent;
+}
+
+.pin-button svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+.pin-button.pinned {
+    color: #202124;
+    background: transparent;
+    border-color: transparent;
+}
+
+.pin-button:disabled {
+    color: #d1d5db;
+    background: transparent;
+}
+
 .add-offer {
     display: flex;
     flex-wrap: wrap;
