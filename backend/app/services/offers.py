@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from time import monotonic
 
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
@@ -8,13 +7,11 @@ from sqlalchemy.orm import Session
 from app.integrations.training_api import TrainingApiClient, TrainingApiError
 from app.models import Campaign, CampaignOffer, CampaignOfferPublication
 from app.schemas.offer import OfferOperationResponse, OfferResponse, OfferSearchResponse
+from app.services.references import reference_cache
 
 
 class OfferOperationError(RuntimeError):
     pass
-
-
-_offers_cache: tuple[float, list[dict[str, object]]] | None = None
 
 
 def _offer_rows(db: Session, campaign_id: int) -> list[CampaignOffer]:
@@ -67,20 +64,16 @@ async def search_available_offers(db: Session, campaign_id: int, query: str) -> 
         return []
     _require_campaign(db, campaign_id)
     used_ids = {item.offer_id for item in _offer_rows(db, campaign_id)}
-    global _offers_cache
-    now = monotonic()
-    if _offers_cache is None or _offers_cache[0] <= now:
-        async with TrainingApiClient() as api:
-            try:
-                raw_offers = await api.list_offers()
-            except TrainingApiError as exc:
-                raise OfferOperationError("Не удалось получить список офферов из API учебного стенда") from exc
-        if isinstance(raw_offers, dict):
-            raw_offers = raw_offers.get("offers", [])
-        _offers_cache = (now + 10, list(raw_offers))
+    async with TrainingApiClient() as api:
+        try:
+            raw_offers = await reference_cache.get("offers", api.list_offers)
+        except TrainingApiError as exc:
+            raise OfferOperationError("Не удалось получить список офферов из API учебного стенда") from exc
+    if isinstance(raw_offers, dict):
+        raw_offers = raw_offers.get("offers", [])
     needle = query.strip().casefold()
     result = []
-    for item in _offers_cache[1]:
+    for item in raw_offers:
         offer_id = item.get("id", item.get("offer_id"))
         name = str(item.get("name", ""))
         if offer_id is not None and int(offer_id) not in used_ids and needle in name.casefold():

@@ -10,6 +10,7 @@ from app.schemas.reference import CountryResponse
 from app.schemas.offer import AddOfferRequest, OfferOperationResponse, OfferSearchResponse
 from app.services import campaigns
 from app.services import offers
+from app.services.references import reference_cache
 
 router = APIRouter(prefix="/api")
 
@@ -22,25 +23,25 @@ def list_countries(db: Session = Depends(get_db)) -> list[Country]:
 @router.get("/references/domains")
 async def list_domains():
     async with TrainingApiClient() as api:
-        return await api.list_domains()
+        return await reference_cache.get("domains", api.list_domains)
 
 
 @router.get("/references/groups")
 async def list_groups():
     async with TrainingApiClient() as api:
-        return await api.list_groups()
+        return await reference_cache.get("groups", api.list_groups)
 
 
 @router.get("/references/traffic-sources")
 async def list_traffic_sources():
     async with TrainingApiClient() as api:
-        return await api.list_traffic_sources()
+        return await reference_cache.get("traffic_sources", api.list_traffic_sources)
 
 
 @router.get("/references/offers")
 async def list_offers():
     async with TrainingApiClient() as api:
-        return await api.list_offers()
+        return await reference_cache.get("offers", api.list_offers)
 
 
 @router.get("/campaigns", response_model=list[CampaignResponse])
