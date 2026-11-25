@@ -69,6 +69,26 @@ h1, h2 {
     box-shadow: 0 2px 10px #0000000d;
 }
 
+.loading-state {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 24px 0;
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid #dbe3ef;
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 .campaign-row {
     padding: 10px 0;
     border-bottom: 1px solid #eee;
@@ -79,6 +99,34 @@ h1, h2 {
     padding: 0;
     text-align: left;
     flex: 1;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.campaign-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.campaign-table th,
+.campaign-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #eee;
+    white-space: nowrap;
+}
+
+.campaign-table th {
+    color: #68707d;
+    font-size: .9rem;
+    font-weight: 600;
+}
+
+.campaign-link {
+    color: #2563eb;
+    text-decoration: underline;
 }
 
 .muted {
