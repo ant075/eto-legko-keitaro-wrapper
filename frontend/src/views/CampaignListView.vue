@@ -86,7 +86,7 @@ onMounted(loadCampaigns)
 
 <template>
   <main class="page">
-    <header class="topbar"><h1>Keitaro Wrapper</h1>
+    <header class="topbar"><h1>Keitaro API Wrapper</h1>
       <button @click="openCreateModal">Добавить кампанию</button>
     </header>
     <p v-if="error" class="error">{{ error }}
