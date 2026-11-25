@@ -18,7 +18,8 @@ _offers_cache: tuple[float, list[dict[str, object]]] | None = None
 
 
 def _offer_rows(db: Session, campaign_id: int) -> list[CampaignOffer]:
-    return list(db.scalars(select(CampaignOffer).where(CampaignOffer.campaign_id == campaign_id).order_by(CampaignOffer.position)))
+    return list(db.scalars(
+        select(CampaignOffer).where(CampaignOffer.campaign_id == campaign_id).order_by(CampaignOffer.position)))
 
 
 def _response(campaign: Campaign, offers: Iterable[CampaignOffer]) -> OfferOperationResponse:
@@ -159,7 +160,8 @@ async def publish(db: Session, campaign_id: int) -> OfferOperationResponse:
     offers = _offer_rows(db, campaign_id)
     payload = {
         "filters": [],
-        "offers": [{"offer_id": item.offer_id, "share": item.weight, "state": "active"} for item in offers if not item.is_deleted],
+        "offers": [{"offer_id": item.offer_id, "share": item.weight, "state": "active"} for item in offers if
+                   not item.is_deleted],
     }
     async with TrainingApiClient() as api:
         try:
@@ -174,7 +176,8 @@ async def publish(db: Session, campaign_id: int) -> OfferOperationResponse:
 
 def cancel(db: Session, campaign_id: int) -> OfferOperationResponse:
     campaign = _require_campaign(db, campaign_id)
-    snapshots = list(db.scalars(select(CampaignOfferPublication).where(CampaignOfferPublication.campaign_id == campaign_id)))
+    snapshots = list(
+        db.scalars(select(CampaignOfferPublication).where(CampaignOfferPublication.campaign_id == campaign_id)))
     snapshot_ids = {item.offer_id for item in snapshots}
     for offer in _offer_rows(db, campaign_id):
         if offer.offer_id not in snapshot_ids:
@@ -207,7 +210,8 @@ async def sync_from_training_api(db: Session, campaign_id: int) -> OfferOperatio
         seen.add(offer_id)
         offer = current.get(offer_id)
         if offer is None:
-            offer = CampaignOffer(campaign_id=campaign_id, offer_id=offer_id, name=str(offer_id), position=position, is_pinned=False, is_deleted=False, weight=0)
+            offer = CampaignOffer(campaign_id=campaign_id, offer_id=offer_id, name=str(offer_id), position=position,
+                                  is_pinned=False, is_deleted=False, weight=0)
             db.add(offer)
         offer.name = str(external.get("name", offer.name))
         offer.weight = int(external.get("share", 0))
@@ -223,4 +227,3 @@ async def sync_from_training_api(db: Session, campaign_id: int) -> OfferOperatio
     campaign.is_dirty = False
     db.commit()
     return _response(campaign, _offer_rows(db, campaign_id))
-

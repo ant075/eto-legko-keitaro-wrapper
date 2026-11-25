@@ -80,22 +80,37 @@ onMounted(load)
     <p v-if="error" class="error">{{ error }}
       <button class="link" @click="error = ''">закрыть</button>
     </p>
-    <section v-if="campaign" class="panel editor">
-      <div class="editor-title"><span class="muted">Поток офферов #{{ campaign.offers_stream_id }}</span>
+    <section v-if="campaign" class="streams">
+      <section class="panel stream-card">
+        <div class="editor-title">
+          <span class="muted">Поток редиректа по стране #{{ campaign.redirect_stream_id }}</span>
+        </div>
+        <p><strong>Страна:</strong> {{ campaign.country_code }} — {{ campaign.country_name }}</p>
+        <p>Перенаправление пользователей из этой страны на Google.</p>
+        <span class="muted">Только для просмотра</span>
+      </section>
+      <section class="panel editor">
+      <div class="editor-title">
+        <span class="muted">Поток офферов #{{ campaign.offers_stream_id }}</span>
         <div class="actions">
           <button :disabled="!campaign.is_dirty" @click="campaignAction(api.publish)">Опубликовать</button>
           <button :disabled="!campaign.is_dirty" @click="campaignAction(api.cancel)">Отмена</button>
           <button :disabled="campaign.is_dirty" @click="campaignAction(api.sync)">Запросить из Keitaro</button>
         </div>
       </div>
-      <OfferList :offers="campaignOffers" :dirty="campaign.is_dirty" @pin="(id) => offerAction(api.pin, id)"
-                 @unpin="(id) => offerAction(api.unpin, id)" @delete="(id) => offerAction(api.deleteOffer, id)"
-                 @restore="(id) => offerAction(api.restoreOffer, id)"/>
+      <OfferList
+          :offers="campaignOffers"
+          :dirty="campaign.is_dirty"
+          @pin="(id) => offerAction(api.pin, id)"
+          @unpin="(id) => offerAction(api.unpin, id)" @delete="(id) => offerAction(api.deleteOffer, id)"
+          @restore="(id) => offerAction(api.restoreOffer, id)"
+      />
       <div class="add-offer"><input v-model="offerQuery" placeholder="Поиск оффера" @input="searchOffers">
         <button v-for="offer in offerSearchResults" :key="offer.offer_id" :disabled="addingOffer"
                 @click="addOffer(offer)">{{ offer.name }} (#{{ offer.offer_id }})
         </button>
       </div>
+      </section>
     </section>
   </main>
 </template>

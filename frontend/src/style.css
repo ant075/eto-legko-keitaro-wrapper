@@ -45,6 +45,19 @@ button:disabled {
     justify-content: space-between;
 }
 
+.streams {
+    display: grid;
+    gap: 18px;
+}
+
+.stream-card {
+    border-left: 4px solid #9ca3af;
+}
+
+.stream-card h2 {
+    margin-bottom: 12px;
+}
+
 h1, h2 {
     margin-top: 0;
 }

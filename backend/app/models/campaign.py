@@ -18,6 +18,11 @@ class Campaign(Base):
     is_dirty: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+    country = relationship("Country", lazy="joined")
     offers = relationship("CampaignOffer", back_populates="campaign", cascade="all, delete-orphan")
     publications = relationship("CampaignOfferPublication", back_populates="campaign", cascade="all, delete-orphan")
+
+    @property
+    def country_name(self) -> str:
+        return self.country.name_ru if self.country else self.country_code
 

@@ -24,6 +24,7 @@ class CampaignResponse(BaseModel):
     redirect_stream_id: int
     offers_stream_id: int
     country_code: str
+    country_name: str
     is_dirty: bool
     created_at: datetime
     updated_at: datetime
