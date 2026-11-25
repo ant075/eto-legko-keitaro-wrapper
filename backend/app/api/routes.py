@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -7,7 +7,9 @@ from app.integrations.training_api import TrainingApiClient, TrainingApiError
 from app.models import Country
 from app.schemas.campaign import CampaignCreate, CampaignResponse
 from app.schemas.reference import CountryResponse
+from app.schemas.offer import AddOfferRequest, OfferOperationResponse, OfferSearchResponse
 from app.services import campaigns
+from app.services import offers
 
 router = APIRouter(prefix="/api")
 
@@ -70,5 +72,89 @@ async def delete_campaign(campaign_id: int, db: Session = Depends(get_db)) -> No
     try:
         await campaigns.delete_campaign(db, campaign)
     except TrainingApiError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.get("/campaigns/{campaign_id}/offers", response_model=OfferOperationResponse)
+def list_campaign_offers(campaign_id: int, db: Session = Depends(get_db)):
+    try:
+        return offers.list_offers(db, campaign_id)
+    except offers.OfferOperationError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/campaigns/{campaign_id}/offers", response_model=OfferOperationResponse)
+async def add_campaign_offer(campaign_id: int, data: AddOfferRequest, db: Session = Depends(get_db)):
+    try:
+        return await offers.add_offer(db, campaign_id, data.offer_id)
+    except offers.OfferOperationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/campaigns/{campaign_id}/offers/search", response_model=list[OfferSearchResponse])
+async def search_campaign_offers(
+    campaign_id: int,
+    q: str = Query(min_length=2),
+    db: Session = Depends(get_db),
+):
+    try:
+        return await offers.search_available_offers(db, campaign_id, q)
+    except offers.OfferOperationError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.post("/campaigns/{campaign_id}/offers/{offer_id}/pin", response_model=OfferOperationResponse)
+def pin_campaign_offer(campaign_id: int, offer_id: int, db: Session = Depends(get_db)):
+    try:
+        return offers.set_pinned(db, campaign_id, offer_id, True)
+    except offers.OfferOperationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/campaigns/{campaign_id}/offers/{offer_id}/unpin", response_model=OfferOperationResponse)
+def unpin_campaign_offer(campaign_id: int, offer_id: int, db: Session = Depends(get_db)):
+    try:
+        return offers.set_pinned(db, campaign_id, offer_id, False)
+    except offers.OfferOperationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/campaigns/{campaign_id}/offers/{offer_id}/delete", response_model=OfferOperationResponse)
+def delete_campaign_offer(campaign_id: int, offer_id: int, db: Session = Depends(get_db)):
+    try:
+        return offers.change_deleted(db, campaign_id, offer_id, True)
+    except offers.OfferOperationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/campaigns/{campaign_id}/offers/{offer_id}/restore", response_model=OfferOperationResponse)
+def restore_campaign_offer(campaign_id: int, offer_id: int, db: Session = Depends(get_db)):
+    try:
+        return offers.change_deleted(db, campaign_id, offer_id, False)
+    except offers.OfferOperationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/campaigns/{campaign_id}/offers/publish", response_model=OfferOperationResponse)
+async def publish_campaign_offers(campaign_id: int, db: Session = Depends(get_db)):
+    try:
+        return await offers.publish(db, campaign_id)
+    except offers.OfferOperationError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.post("/campaigns/{campaign_id}/offers/cancel", response_model=OfferOperationResponse)
+def cancel_campaign_offers(campaign_id: int, db: Session = Depends(get_db)):
+    try:
+        return offers.cancel(db, campaign_id)
+    except offers.OfferOperationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/campaigns/{campaign_id}/offers/sync", response_model=OfferOperationResponse)
+async def sync_campaign_offers(campaign_id: int, db: Session = Depends(get_db)):
+    try:
+        return await offers.sync_from_training_api(db, campaign_id)
+    except offers.OfferOperationError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 

@@ -46,7 +46,7 @@ async def create_campaign(db: Session, data: CampaignCreate) -> Campaign:
         "offers": [],
     }
     offers_payload = {
-        "name": "with offers",
+        "name": "With offers",
         "type": "regular",
         "state": "active",
         "schema": "landings",
@@ -67,6 +67,7 @@ async def create_campaign(db: Session, data: CampaignCreate) -> Campaign:
             redirect_stream = await api.create_stream(redirect_payload)
             offers_payload["campaign_id"] = campaign_id
             offers_stream = await api.create_stream(offers_payload)
+            external_offer = await api.get_offer(data.offer_id)
     except (TrainingApiError, KeyError, TypeError, ValueError) as exc:
         if campaign_id is not None:
             try:
@@ -94,7 +95,7 @@ async def create_campaign(db: Session, data: CampaignCreate) -> Campaign:
         local_offer = CampaignOffer(
             campaign_id=campaign_id,
             offer_id=data.offer_id,
-            name=str(data.offer_id),
+            name=str(external_offer.get("name", data.offer_id)),
             weight=100,
             is_pinned=False,
             is_deleted=False,
@@ -105,7 +106,7 @@ async def create_campaign(db: Session, data: CampaignCreate) -> Campaign:
             CampaignOfferPublication(
                 campaign_id=campaign_id,
                 offer_id=data.offer_id,
-                name=str(data.offer_id),
+                name=str(external_offer.get("name", data.offer_id)),
                 weight=100,
                 is_deleted=False,
                 position=1,
