@@ -211,6 +211,23 @@ h1, h2 {
     background: transparent;
 }
 
+.offer-action-button {
+    display: inline-grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    padding: 6px;
+    color: #202124;
+    border-color: transparent;
+    background: transparent;
+}
+
+.offer-action-button svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
 .add-offer {
     display: flex;
     flex-wrap: wrap;

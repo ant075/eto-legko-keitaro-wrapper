@@ -25,8 +25,14 @@ const unpinTitle = 'Открепить оффер: его вес будет пе
       >
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 3.3a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4l-1.8 1.8-.2 4.2a1 1 0 0 1-.3.7l-2 2-3.8-3.8-5.8 5.8a1 1 0 1 1-1.4-1.4l5.8-5.8-3.8-3.8 2-2a1 1 0 0 1 .7-.3l4.2-.2 1.8-1.8a1 1 0 0 1 1.4 0Z"/></svg>
       </button>
-      <button @click="emit(offer.is_deleted ? 'restore' : 'delete', offer.offer_id)">
-        {{ offer.is_deleted ? 'Восстановить' : 'Удалить' }}
+      <button
+        class="offer-action-button"
+        :title="offer.is_deleted ? 'Восстановить оффер' : 'Удалить оффер'"
+        :aria-label="offer.is_deleted ? 'Восстановить оффер' : 'Удалить оффер'"
+        @click="emit(offer.is_deleted ? 'restore' : 'delete', offer.offer_id)"
+      >
+        <svg v-if="offer.is_deleted" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5a7 7 0 1 1-6.7 9h2.1A5 5 0 1 0 8.8 7.3L6 10H3V7h2.2A9 9 0 1 1 12 21a9 9 0 0 1-8.5-6h2.1A7 7 0 1 0 12 5Z"/></svg>
+        <svg v-else viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6l1 2h4v2H4V6h4l1-2Zm-3 6h12l-.8 10.1a1 1 0 0 1-1 .9H7.8a1 1 0 0 1-1-.9L6 10Zm3 2v7h2v-7H9Zm4 0v7h2v-7h-2Z"/></svg>
       </button>
     </div>
     <p v-if="!offers.length" class="muted">Офферов нет.</p>
