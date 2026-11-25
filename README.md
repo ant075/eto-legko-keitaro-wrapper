@@ -11,3 +11,11 @@ Backend healthcheck: http://localhost:8000/api/health
 
 При старте backend применяет миграции и запускает сидер стран.
 
+## Запуск в dev-режиме
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+
+В dev-режиме frontend доступен по адресу http://localhost:5173, backend — по адресу http://localhost:8000. Изменения исходников frontend и backend подхватываются автоматически. Dev- и production-конфигурации используют один volume PostgreSQL `postgres_data`.
+
