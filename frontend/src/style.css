@@ -204,6 +204,7 @@ h1, h2 {
 }
 
 .modal {
+    position: relative;
     width: min(480px, calc(100vw - 32px));
     display: grid;
     gap: 12px;
@@ -212,7 +213,27 @@ h1, h2 {
     border-radius: 10px;
 }
 
-.modal > input, .modal > select, .modal > * {
+.modal-fields {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+}
+
+.modal-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #ffffffe6;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.modal input, .modal select, .modal-fields > * {
     min-width: 0;
     width: 100%;
 }
