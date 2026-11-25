@@ -85,9 +85,10 @@ onMounted(load)
         <div class="editor-title">
           <span class="muted">Поток редиректа по стране #{{ campaign.redirect_stream_id }}</span>
         </div>
-        <p><strong>Страна:</strong> {{ campaign.country_code }} — {{ campaign.country_name }}</p>
-        <p>Перенаправление пользователей из этой страны на Google.</p>
-        <span class="muted">Только для просмотра</span>
+        <p>
+          Пользователей из <strong>{{ campaign.country_name }} ({{ campaign.country_code }})</strong>
+          перенаправлять на <strong>{{ campaign.redirect_target_url }}</strong>
+        </p>
       </section>
       <section class="panel editor">
       <div class="editor-title">

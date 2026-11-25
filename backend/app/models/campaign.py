@@ -1,6 +1,7 @@
 from datetime import datetime
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.core.config import get_settings
 from app.db.base import Base
 
 
@@ -25,4 +26,8 @@ class Campaign(Base):
     @property
     def country_name(self) -> str:
         return self.country.name_ru if self.country else self.country_code
+
+    @property
+    def redirect_target_url(self) -> str:
+        return get_settings().redirect_target_url
 
