@@ -70,7 +70,7 @@ button:disabled {
 }
 
 .stream-card {
-    border-left: 4px solid #9ca3af;
+    border-left: 0;
 }
 
 .stream-card h2 {

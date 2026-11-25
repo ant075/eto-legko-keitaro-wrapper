@@ -16,7 +16,9 @@ class OfferOperationError(RuntimeError):
 
 def _offer_rows(db: Session, campaign_id: int) -> list[CampaignOffer]:
     return list(db.scalars(
-        select(CampaignOffer).where(CampaignOffer.campaign_id == campaign_id).order_by(CampaignOffer.position)))
+        select(CampaignOffer)
+        .where(CampaignOffer.campaign_id == campaign_id)
+        .order_by(CampaignOffer.is_deleted, CampaignOffer.position)))
 
 
 def _response(campaign: Campaign, offers: Iterable[CampaignOffer]) -> OfferOperationResponse:
