@@ -208,8 +208,15 @@ async def sync_from_training_api(db: Session, campaign_id: int) -> OfferOperatio
             offer = CampaignOffer(campaign_id=campaign_id, offer_id=offer_id, name=str(offer_id), position=position,
                                   is_pinned=False, is_deleted=False, weight=0)
             db.add(offer)
+            was_pinned = False
+            previous_weight = None
+        else:
+            was_pinned = offer.is_pinned
+            previous_weight = offer.weight
         offer.name = str(external.get("name", offer.name))
-        offer.weight = int(external.get("share", 0))
+        external_weight = int(external.get("share", 0))
+        offer.is_pinned = was_pinned and previous_weight == external_weight
+        offer.weight = external_weight
         offer.position = position
         offer.is_deleted = False
     for offer_id, offer in current.items():
