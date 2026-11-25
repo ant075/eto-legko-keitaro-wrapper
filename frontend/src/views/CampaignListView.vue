@@ -17,10 +17,7 @@ function options(items) {
 async function loadCampaigns() {
   try {
     campaignsLoading.value = true
-    const [campaignData, groupData, sourceData] = await Promise.all([api.campaigns(), api.groups(), api.sources()])
-    campaigns.value = campaignData
-    groups.value = options(groupData)
-    sources.value = options(sourceData)
+    campaigns.value = await api.campaigns()
   } catch (err) {
     error.value = err.message
   } finally {
@@ -32,9 +29,11 @@ async function loadReferences() {
   if (referencesLoaded.value || referencesLoading.value) return;
   try {
     referencesLoading.value = true;
-    const [countryData, domainData] = await Promise.all([api.countries(), api.domains()]);
+    const [countryData, domainData, groupData, sourceData] = await Promise.all([api.countries(), api.domains(), api.groups(), api.sources()]);
     countries.value = countryData;
     domains.value = options(domainData);
+    groups.value = options(groupData);
+    sources.value = options(sourceData);
     referencesLoaded.value = true
   } catch (err) {
     error.value = err.message
@@ -45,10 +44,6 @@ async function loadReferences() {
 
 async function searchOffers(query) {
   try { return await api.searchReferenceOffers(query) } catch (err) { error.value = err.message; return [] }
-}
-
-function referenceName(items, id) {
-  return items.find((item) => item.id === id)?.name || id
 }
 
 function formatDate(value) {
@@ -98,7 +93,7 @@ onMounted(loadCampaigns)
     <section class="panel campaign-panel"><h2>Кампании</h2>
       <div v-if="campaignsLoading" class="loading-state"><span class="spinner" aria-label="Загрузка"></span><span class="muted">Загрузка кампаний…</span></div>
       <p v-else-if="!campaigns.length" class="muted">Кампаний пока нет.</p>
-      <div v-else class="table-wrapper"><table class="campaign-table"><thead><tr><th>ID</th><th>Имя</th><th>Источник</th><th>Группа</th><th>Дата последнего изменения</th><th></th></tr></thead><tbody><tr v-for="campaign in campaigns" :key="campaign.id"><td>{{ campaign.id }}</td><td><RouterLink class="campaign-link" :to="`/campaigns/${campaign.id}`">{{ campaign.name }}</RouterLink></td><td>{{ referenceName(sources, campaign.traffic_source_id) }}</td><td>{{ referenceName(groups, campaign.group_id) }}</td><td>{{ formatDate(campaign.updated_at) }}</td><td><button class="danger link" @click="removeCampaign(campaign)">Удалить</button></td></tr></tbody></table></div>
+      <div v-else class="table-wrapper"><table class="campaign-table"><thead><tr><th>ID</th><th>Имя</th><th>Дата последнего изменения</th><th></th></tr></thead><tbody><tr v-for="campaign in campaigns" :key="campaign.id"><td>{{ campaign.id }}</td><td><RouterLink class="campaign-link" :to="`/campaigns/${campaign.id}`">{{ campaign.name }}</RouterLink></td><td>{{ formatDate(campaign.updated_at) }}</td><td><button class="danger link" @click="removeCampaign(campaign)">Удалить</button></td></tr></tbody></table></div>
     </section>
     <CreateCampaignModal v-if="showCreate" :countries="countries" :domains="domains" :groups="groups" :sources="sources"
                          :load-offers="searchOffers" :loading="loading || referencesLoading" @close="showCreate = false"
