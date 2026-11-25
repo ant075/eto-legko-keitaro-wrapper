@@ -1,19 +1,14 @@
 <script setup>
-import {computed, onMounted, ref} from 'vue'
+import {onMounted, ref} from 'vue'
 import {api} from './api'
+import CreateCampaignModal from './components/CreateCampaignModal.vue'
 import OfferList from './components/OfferList.vue'
 
 const campaigns = ref([]), countries = ref([]), domains = ref([]), groups = ref([]), sources = ref([]), offers = ref([])
 const selectedCampaign = ref(null), campaignOffers = ref([]), showCreate = ref(false), loading = ref(false), addingOffer = ref(false),
     error = ref('')
-const countryQuery = ref(''), offerQuery = ref(''), offerSearchResults = ref([])
+const offerQuery = ref(''), offerSearchResults = ref([])
 let searchTimer
-const form = ref({name: '', domain_id: '', group_id: '', traffic_source_id: '', country_code: '', offer_id: ''})
-
-const filteredCountries = computed(() => {
-  const needle = countryQuery.value.trim().toLowerCase()
-  return countries.value.filter((country) => !needle || `${country.code} ${country.name_ru}`.toLowerCase().includes(needle))
-})
 
 function options(items) {
   return (Array.isArray(items) ? items : items?.data || items?.items || []).map((item) => ({
@@ -36,18 +31,11 @@ async function loadInitial() {
   }
 }
 
-async function createCampaign() {
+async function createCampaign(data) {
   try {
     loading.value = true
-    await api.createCampaign({
-      ...form.value,
-      domain_id: Number(form.value.domain_id),
-      group_id: Number(form.value.group_id),
-      traffic_source_id: Number(form.value.traffic_source_id),
-      offer_id: Number(form.value.offer_id)
-    })
+    await api.createCampaign(data)
     showCreate.value = false;
-    form.value = {name: '', domain_id: '', group_id: '', traffic_source_id: '', country_code: '', offer_id: ''};
     await loadInitial()
   } catch (err) {
     error.value = err.message
@@ -173,33 +161,17 @@ onMounted(loadInitial)
         </div>
       </div>
     </section>
-    <div v-if="showCreate" class="modal-backdrop" @click.self="showCreate = false">
-      <form class="modal" @submit.prevent="createCampaign"><h2>Новая кампания</h2><input v-model="form.name" required
-                                                                                         placeholder="Название"><input
-          v-model="countryQuery" placeholder="Поиск страны"><select v-model="form.country_code" required>
-        <option disabled value="">Страна</option>
-        <option v-for="country in filteredCountries" :key="country.code" :value="country.code">{{ country.code }} —
-          {{ country.name_ru }}
-        </option>
-      </select><select v-model="form.domain_id" required>
-        <option disabled value="">Домен</option>
-        <option v-for="item in domains" :key="item.id" :value="item.id">{{ item.name }}</option>
-      </select><select v-model="form.group_id" required>
-        <option disabled value="">Группа</option>
-        <option v-for="item in groups" :key="item.id" :value="item.id">{{ item.name }}</option>
-      </select><select v-model="form.traffic_source_id" required>
-        <option disabled value="">Источник</option>
-        <option v-for="item in sources" :key="item.id" :value="item.id">{{ item.name }}</option>
-      </select><select v-model="form.offer_id" required>
-        <option disabled value="">Оффер</option>
-        <option v-for="item in offers" :key="item.id" :value="item.id">{{ item.name }}</option>
-      </select>
-        <div class="modal-actions">
-          <button type="button" @click="showCreate = false">Отмена</button>
-          <button type="submit" :disabled="loading">Создать</button>
-        </div>
-      </form>
-    </div>
+    <CreateCampaignModal
+      v-if="showCreate"
+      :countries="countries"
+      :domains="domains"
+      :groups="groups"
+      :sources="sources"
+      :offers="offers"
+      :loading="loading"
+      @close="showCreate = false"
+      @create="createCampaign"
+    />
   </main>
 </template>
 
@@ -366,6 +338,16 @@ h1, h2 {
   padding: 24px;
   background: white;
   border-radius: 10px;
+}
+
+.modal > input,
+.modal > select {
+  width: 100%;
+  min-width: 0;
+}
+
+.modal > * {
+  min-width: 0;
 }
 
 .modal-actions {
