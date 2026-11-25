@@ -7,24 +7,30 @@ import SearchSelect from '../components/SearchSelect.vue'
 
 const route = useRoute(), router = useRouter()
 const campaign = ref(null), campaignOffers = ref([]), selectedOffer = ref(null),
-    error = ref(''), addingOffer = ref(false)
+    error = ref(''), loading = ref(false), addingOffer = ref(false)
 
 async function load() {
   try {
+    loading.value = true
     campaign.value = await api.campaign(route.params.id);
     campaignOffers.value = (await api.campaignOffers(route.params.id)).offers
   } catch (err) {
     error.value = err.message
+  } finally {
+    loading.value = false
   }
 }
 
 async function offerAction(action, offerId) {
   try {
+    loading.value = true
     const result = await action(campaign.value.id, offerId);
     campaignOffers.value = result.offers;
     campaign.value.is_dirty = result.is_dirty
   } catch (err) {
     error.value = err.message
+  } finally {
+    loading.value = false
   }
 }
 
@@ -36,6 +42,7 @@ async function addOffer() {
   if (!selectedOffer.value) return;
   if (addingOffer.value) return;
   try {
+    loading.value = true;
     addingOffer.value = true;
     const result = await api.addOffer(campaign.value.id, selectedOffer.value);
     campaignOffers.value = result.offers;
@@ -45,16 +52,20 @@ async function addOffer() {
     error.value = err.message
   } finally {
     addingOffer.value = false
+    loading.value = false
   }
 }
 
 async function campaignAction(action) {
   try {
+    loading.value = true
     const result = await action(campaign.value.id);
     campaignOffers.value = result.offers;
     campaign.value.is_dirty = result.is_dirty
   } catch (err) {
     error.value = err.message
+  } finally {
+    loading.value = false
   }
 }
 
@@ -62,7 +73,7 @@ onMounted(load)
 </script>
 
 <template>
-  <main class="page">
+  <main class="page edit-page">
     <header class="topbar">
       <button class="link" @click="router.push('/campaigns')">← Кампании</button>
       <h1 v-if="campaign">{{ campaign.name }}</h1><span v-else>Загрузка…</span></header>
@@ -79,7 +90,8 @@ onMounted(load)
           перенаправлять на <strong>{{ campaign.redirect_target_url }}</strong>
         </p>
       </section>
-      <section class="panel editor">
+      <section class="panel editor offer-stream-card" :aria-busy="loading">
+      <div v-if="loading" class="card-loading"><span class="spinner"></span><span>Загрузка…</span></div>
       <div class="editor-title">
         <span class="muted">Поток офферов #{{ campaign.offers_stream_id }}</span>
         <div class="actions">
