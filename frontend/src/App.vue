@@ -5,7 +5,7 @@ import CreateCampaignModal from './components/CreateCampaignModal.vue'
 import OfferList from './components/OfferList.vue'
 
 const campaigns = ref([]), countries = ref([]), domains = ref([]), groups = ref([]), sources = ref([]), offers = ref([])
-const selectedCampaign = ref(null), campaignOffers = ref([]), showCreate = ref(false), loading = ref(false), addingOffer = ref(false),
+const selectedCampaign = ref(null), campaignOffers = ref([]), showCreate = ref(false), loading = ref(false), referencesLoading = ref(false), referencesLoaded = ref(false), addingOffer = ref(false),
     error = ref('')
 const offerQuery = ref(''), offerSearchResults = ref([])
 let searchTimer
@@ -19,16 +19,33 @@ function options(items) {
 
 async function loadInitial() {
   try {
-    const [campaignData, countryData, domainData, groupData, sourceData, offerData] = await Promise.all([api.campaigns(), api.countries(), api.domains(), api.groups(), api.sources(), api.offers()])
-    campaigns.value = campaignData;
-    countries.value = countryData;
-    domains.value = options(domainData);
-    groups.value = options(groupData);
-    sources.value = options(sourceData);
-    offers.value = options(offerData)
+    campaigns.value = await api.campaigns()
   } catch (err) {
     error.value = err.message
   }
+}
+
+async function loadReferences() {
+  if (referencesLoaded.value || referencesLoading.value) return
+  try {
+    referencesLoading.value = true
+    const [countryData, domainData, groupData, sourceData, offerData] = await Promise.all([api.countries(), api.domains(), api.groups(), api.sources(), api.offers()])
+    countries.value = countryData
+    domains.value = options(domainData)
+    groups.value = options(groupData)
+    sources.value = options(sourceData)
+    offers.value = options(offerData)
+    referencesLoaded.value = true
+  } catch (err) {
+    error.value = err.message
+  } finally {
+    referencesLoading.value = false
+  }
+}
+
+async function openCreateModal() {
+  showCreate.value = true
+  await loadReferences()
 }
 
 async function createCampaign(data) {
@@ -120,7 +137,7 @@ onMounted(loadInitial)
 <template>
   <main class="page">
     <header class="topbar"><h1>Keitaro Wrapper</h1>
-      <button @click="showCreate = true">Добавить кампанию</button>
+      <button @click="openCreateModal">Добавить кампанию</button>
     </header>
     <p v-if="error" class="error">{{ error }}
       <button class="link" @click="error = ''">закрыть</button>
@@ -168,7 +185,7 @@ onMounted(loadInitial)
       :groups="groups"
       :sources="sources"
       :offers="offers"
-      :loading="loading"
+      :loading="loading || referencesLoading"
       @close="showCreate = false"
       @create="createCampaign"
     />
