@@ -18,7 +18,7 @@ export const api = {
   offers: () => request('/api/references/offers'),
   campaignOffers: (id) => request(`/api/campaigns/${id}/offers`),
   searchOffers: (id, q) => request(`/api/campaigns/${id}/offers/search?q=${encodeURIComponent(q)}`),
-  addOffer: (id, offerId) => request(`/api/campaigns/${id}/offers`, { method: 'POST', body: JSON.stringify({ offer_id: offerId }) }),
+  addOffer: (id, offer) => request(`/api/campaigns/${id}/offers`, { method: 'POST', body: JSON.stringify({ offer_id: offer.offer_id, name: offer.name }) }),
   pin: (id, offerId) => request(`/api/campaigns/${id}/offers/${offerId}/pin`, { method: 'POST' }),
   unpin: (id, offerId) => request(`/api/campaigns/${id}/offers/${offerId}/unpin`, { method: 'POST' }),
   deleteOffer: (id, offerId) => request(`/api/campaigns/${id}/offers/${offerId}/delete`, { method: 'POST' }),

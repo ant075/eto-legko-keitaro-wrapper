@@ -2,6 +2,7 @@ from collections.abc import Iterable
 from time import monotonic
 
 from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.integrations.training_api import TrainingApiClient, TrainingApiError
@@ -113,16 +114,10 @@ def change_deleted(db: Session, campaign_id: int, offer_id: int, is_deleted: boo
     return _response(campaign, _offer_rows(db, campaign_id))
 
 
-async def add_offer(db: Session, campaign_id: int, offer_id: int) -> OfferOperationResponse:
+def add_offer(db: Session, campaign_id: int, offer_id: int, name: str) -> OfferOperationResponse:
     campaign = _require_campaign(db, campaign_id)
     if db.get(CampaignOffer, (campaign_id, offer_id)) is not None:
         raise OfferOperationError("Оффер уже есть в кампании")
-    async with TrainingApiClient() as api:
-        try:
-            external_offer = await api.get_offer(offer_id)
-        except TrainingApiError as exc:
-            raise OfferOperationError("Не удалось получить оффер из API учебного стенда") from exc
-    name = str(external_offer.get("name", offer_id))
     current = _offer_rows(db, campaign_id)
     offer = CampaignOffer(
         campaign_id=campaign_id,
@@ -137,7 +132,11 @@ async def add_offer(db: Session, campaign_id: int, offer_id: int) -> OfferOperat
     current.append(offer)
     _recalculate_weights(current)
     campaign.is_dirty = True
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise OfferOperationError("Оффер уже добавляется или уже есть в кампании") from exc
     return _response(campaign, _offer_rows(db, campaign_id))
 
 

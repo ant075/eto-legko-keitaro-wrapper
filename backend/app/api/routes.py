@@ -84,9 +84,9 @@ def list_campaign_offers(campaign_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/campaigns/{campaign_id}/offers", response_model=OfferOperationResponse)
-async def add_campaign_offer(campaign_id: int, data: AddOfferRequest, db: Session = Depends(get_db)):
+def add_campaign_offer(campaign_id: int, data: AddOfferRequest, db: Session = Depends(get_db)):
     try:
-        return await offers.add_offer(db, campaign_id, data.offer_id)
+        return offers.add_offer(db, campaign_id, data.offer_id, data.name)
     except offers.OfferOperationError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
