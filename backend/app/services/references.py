@@ -39,3 +39,15 @@ class ReferenceCache:
 
 reference_cache = ReferenceCache()
 
+
+async def search_offers(api_client, query: str) -> list[dict[str, object]]:
+    raw_offers = await reference_cache.get("offers", api_client.list_offers)
+    if isinstance(raw_offers, dict):
+        raw_offers = raw_offers.get("offers", [])
+    needle = query.strip().casefold()
+    return [
+        {"id": item.get("id", item.get("offer_id")), "name": item.get("name", "")}
+        for item in raw_offers
+        if item.get("id", item.get("offer_id")) is not None
+           and needle in str(item.get("name", "")).casefold()
+    ]

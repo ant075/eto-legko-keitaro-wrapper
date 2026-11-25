@@ -17,6 +17,7 @@ export const api = {
   groups: () => request('/api/references/groups'),
   sources: () => request('/api/references/traffic-sources'),
   offers: () => request('/api/references/offers'),
+  searchReferenceOffers: (q) => request(`/api/references/offers/search?q=${encodeURIComponent(q)}`),
   campaignOffers: (id) => request(`/api/campaigns/${id}/offers`),
   searchOffers: (id, q) => request(`/api/campaigns/${id}/offers/search?q=${encodeURIComponent(q)}`),
   addOffer: (id, offer) => request(`/api/campaigns/${id}/offers`, { method: 'POST', body: JSON.stringify({ offer_id: offer.offer_id, name: offer.name }) }),

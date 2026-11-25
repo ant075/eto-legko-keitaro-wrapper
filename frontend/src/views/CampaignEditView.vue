@@ -3,11 +3,11 @@ import {onMounted, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {api} from '../api'
 import OfferList from '../components/OfferList.vue'
+import SearchSelect from '../components/SearchSelect.vue'
 
 const route = useRoute(), router = useRouter()
-const campaign = ref(null), campaignOffers = ref([]), offerQuery = ref(''), offerSearchResults = ref([]),
+const campaign = ref(null), campaignOffers = ref([]), selectedOffer = ref(null),
     error = ref(''), addingOffer = ref(false)
-let searchTimer
 
 async function load() {
   try {
@@ -28,30 +28,19 @@ async function offerAction(action, offerId) {
   }
 }
 
-function searchOffers() {
-  clearTimeout(searchTimer);
-  if (offerQuery.value.trim().length < 2) {
-    offerSearchResults.value = [];
-    return
-  }
-  ;searchTimer = setTimeout(async () => {
-    try {
-      offerSearchResults.value = await api.searchOffers(campaign.value.id, offerQuery.value)
-    } catch (err) {
-      error.value = err.message
-    }
-  }, 250)
+async function loadOfferOptions(query) {
+  try { return await api.searchOffers(campaign.value.id, query) } catch (err) { error.value = err.message; return [] }
 }
 
-async function addOffer(offer) {
+async function addOffer() {
+  if (!selectedOffer.value) return;
   if (addingOffer.value) return;
   try {
     addingOffer.value = true;
-    const result = await api.addOffer(campaign.value.id, offer);
+    const result = await api.addOffer(campaign.value.id, selectedOffer.value);
     campaignOffers.value = result.offers;
     campaign.value.is_dirty = result.is_dirty;
-    offerQuery.value = '';
-    offerSearchResults.value = []
+    selectedOffer.value = null
   } catch (err) {
     error.value = err.message
   } finally {
@@ -106,10 +95,9 @@ onMounted(load)
           @unpin="(id) => offerAction(api.unpin, id)" @delete="(id) => offerAction(api.deleteOffer, id)"
           @restore="(id) => offerAction(api.restoreOffer, id)"
       />
-      <div class="add-offer"><input v-model="offerQuery" placeholder="Поиск оффера" @input="searchOffers">
-        <button v-for="offer in offerSearchResults" :key="offer.offer_id" :disabled="addingOffer"
-                @click="addOffer(offer)">{{ offer.name }} (#{{ offer.offer_id }})
-        </button>
+      <div class="add-offer">
+        <SearchSelect v-model="selectedOffer" :load-options="loadOfferOptions" :get-label="(offer) => `${offer.name} (#${offer.offer_id})`" :min-search-length="2" placeholder="Поиск оффера" :disabled="addingOffer" />
+        <button :disabled="!selectedOffer || addingOffer" @click="addOffer">Добавить</button>
       </div>
       </section>
     </section>

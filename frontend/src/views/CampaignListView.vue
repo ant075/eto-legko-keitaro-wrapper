@@ -3,7 +3,7 @@ import {onMounted, ref} from 'vue'
 import {api} from '../api'
 import CreateCampaignModal from '../components/CreateCampaignModal.vue'
 
-const campaigns = ref([]), countries = ref([]), domains = ref([]), groups = ref([]), sources = ref([]), offers = ref([])
+const campaigns = ref([]), countries = ref([]), domains = ref([]), groups = ref([]), sources = ref([])
 const showCreate = ref(false), loading = ref(false), campaignsLoading = ref(false), referencesLoading = ref(false), referencesLoaded = ref(false),
     error = ref('')
 
@@ -32,16 +32,19 @@ async function loadReferences() {
   if (referencesLoaded.value || referencesLoading.value) return;
   try {
     referencesLoading.value = true;
-    const [countryData, domainData, offerData] = await Promise.all([api.countries(), api.domains(), api.offers()]);
+    const [countryData, domainData] = await Promise.all([api.countries(), api.domains()]);
     countries.value = countryData;
     domains.value = options(domainData);
-    offers.value = options(offerData);
     referencesLoaded.value = true
   } catch (err) {
     error.value = err.message
   } finally {
     referencesLoading.value = false
   }
+}
+
+async function searchOffers(query) {
+  try { return await api.searchReferenceOffers(query) } catch (err) { error.value = err.message; return [] }
 }
 
 function referenceName(items, id) {
@@ -98,7 +101,7 @@ onMounted(loadCampaigns)
       <div v-else class="table-wrapper"><table class="campaign-table"><thead><tr><th>ID</th><th>Имя</th><th>Источник</th><th>Группа</th><th>Дата последнего изменения</th><th></th></tr></thead><tbody><tr v-for="campaign in campaigns" :key="campaign.id"><td>{{ campaign.id }}</td><td><RouterLink class="campaign-link" :to="`/campaigns/${campaign.id}`">{{ campaign.name }}</RouterLink></td><td>{{ referenceName(sources, campaign.traffic_source_id) }}</td><td>{{ referenceName(groups, campaign.group_id) }}</td><td>{{ formatDate(campaign.updated_at) }}</td><td><button class="danger link" @click="removeCampaign(campaign)">Удалить</button></td></tr></tbody></table></div>
     </section>
     <CreateCampaignModal v-if="showCreate" :countries="countries" :domains="domains" :groups="groups" :sources="sources"
-                         :offers="offers" :loading="loading || referencesLoading" @close="showCreate = false"
+                         :load-offers="searchOffers" :loading="loading || referencesLoading" @close="showCreate = false"
                          @create="createCampaign"/>
   </main>
 </template>

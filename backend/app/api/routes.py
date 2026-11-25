@@ -11,6 +11,7 @@ from app.schemas.offer import AddOfferRequest, OfferOperationResponse, OfferSear
 from app.services import campaigns
 from app.services import offers
 from app.services.references import reference_cache
+from app.services.references import search_offers
 
 router = APIRouter(prefix="/api")
 
@@ -42,6 +43,12 @@ async def list_traffic_sources():
 async def list_offers():
     async with TrainingApiClient() as api:
         return await reference_cache.get("offers", api.list_offers)
+
+
+@router.get("/references/offers/search")
+async def search_reference_offers(q: str = Query(min_length=2)):
+    async with TrainingApiClient() as api:
+        return await search_offers(api, q)
 
 
 @router.get("/campaigns", response_model=list[CampaignResponse])
