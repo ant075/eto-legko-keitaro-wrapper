@@ -1,8 +1,8 @@
 # Keitaro Wrapper
 
 ```bash
-cp .env.example .env
-# заполнить API_KEY в .env
+cp backend/.env.example backend/.env
+# заполнить API_KEY в backend/.env
 docker compose up -d --build
 ```
 
