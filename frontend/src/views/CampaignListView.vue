@@ -94,9 +94,6 @@ onMounted(loadCampaigns)
 
 <template>
   <main class="page">
-    <header class="topbar"><h1>Keitaro API Wrapper</h1>
-      <button @click="openCreateModal">Добавить кампанию</button>
-    </header>
     <p v-if="error" class="error">{{ error }}
       <button class="link" @click="error = ''">закрыть</button>
     </p>
@@ -105,7 +102,10 @@ onMounted(loadCampaigns)
         <span class="spinner"></span>
         <span>Удаление кампании…</span>
       </div>
-      <h2>Кампании</h2>
+      <div class="stream-card-title">
+        <h2>Кампании</h2>
+        <button @click="openCreateModal">Добавить кампанию</button>
+      </div>
       <div v-if="campaignsLoading" class="loading-state"><span class="spinner" aria-label="Загрузка"></span><span
           class="muted">Загрузка кампаний…</span></div>
       <p v-else-if="!campaigns.length" class="muted">Кампаний пока нет.</p>

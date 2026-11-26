@@ -75,7 +75,7 @@ onMounted(load)
 <template>
   <main class="page edit-page">
     <header class="topbar">
-      <button class="link" @click="router.push('/campaigns')">← Кампании</button>
+      <button class="link" @click="router.push('/campaigns')">← Все кампании</button>
       <h1 v-if="campaign">{{ campaign.name }}</h1><span v-else>Загрузка…</span></header>
     <p v-if="error" class="error">{{ error }}
       <button class="link" @click="error = ''">закрыть</button>

@@ -12,6 +12,19 @@ body {
     margin: 0;
 }
 
+.app-header {
+    background: transparent;
+}
+
+.app-header-inner {
+    padding-top: 18px;
+}
+
+.app-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
 button, input, select {
     font: inherit;
     padding: .55rem .7rem;
@@ -34,6 +47,10 @@ button:disabled {
     max-width: 1200px;
     margin: auto;
     padding: 24px;
+}
+
+.page.app-header-inner {
+    padding-bottom: 0;
 }
 
 .offer-stream-card {
@@ -78,7 +95,7 @@ button:disabled {
 }
 
 .stream-card h2 {
-    margin-bottom: 12px;
+    margin: 0;
 }
 
 h1, h2 {
