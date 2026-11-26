@@ -54,14 +54,18 @@ button:disabled {
     font-weight: 600;
 }
 
-.topbar, .editor-title, .campaign-row, .offer-row, .actions, .modal-actions {
+.topbar, .stream-card-title, .campaign-row, .offer-row, .actions, .modal-actions {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-.topbar, .editor-title {
+.topbar, .stream-card-title {
     justify-content: space-between;
+}
+
+.stream-card-title {
+    margin-bottom: 16px;
 }
 
 .streams {

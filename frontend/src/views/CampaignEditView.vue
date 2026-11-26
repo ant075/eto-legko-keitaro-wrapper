@@ -82,7 +82,7 @@ onMounted(load)
     </p>
     <section v-if="campaign" class="streams">
       <section class="panel stream-card">
-        <div class="editor-title">
+        <div class="stream-card-title">
           <span class="muted">Поток редиректа по стране #{{ campaign.redirect_stream_id }}</span>
         </div>
         <p>
@@ -92,7 +92,7 @@ onMounted(load)
       </section>
       <section class="panel editor offer-stream-card" :aria-busy="loading">
       <div v-if="loading" class="card-loading"><span class="spinner"></span><span>Загрузка…</span></div>
-      <div class="editor-title">
+      <div class="stream-card-title">
         <span class="muted">Поток офферов #{{ campaign.offers_stream_id }}</span>
         <div class="actions">
           <button :disabled="!campaign.is_dirty" @click="campaignAction(api.publish)">Опубликовать</button>
