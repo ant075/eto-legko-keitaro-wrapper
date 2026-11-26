@@ -1,14 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.integrations.training_api import TrainingApiClient, TrainingApiError
-from app.models import Country
 from app.schemas.campaign import CampaignCreate, CampaignResponse
 from app.schemas.reference import CountryResponse
 from app.schemas.offer import AddOfferRequest, OfferOperationResponse, OfferSearchResponse
 from app.services import campaigns
+from app.services import countries
 from app.services import offers
 from app.services.references import reference_cache
 from app.services.references import search_offers
@@ -17,8 +16,8 @@ router = APIRouter(prefix="/api")
 
 
 @router.get("/countries", response_model=list[CountryResponse])
-def list_countries(db: Session = Depends(get_db)) -> list[Country]:
-    return list(db.scalars(select(Country).order_by(Country.name_ru)))
+def list_countries(db: Session = Depends(get_db)):
+    return countries.list_countries(db)
 
 
 @router.get("/references/domains")
