@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 const props = defineProps({
   modelValue: { default: null },
@@ -14,7 +14,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue', 'select'])
-const root = ref(null), input = ref(null), query = ref(''), opened = ref(false), loading = ref(false), remoteOptions = ref([])
+const root = ref(null), input = ref(null), query = ref(''), opened = ref(false), loading = ref(false), remoteOptions = ref([]), activeIndex = ref(-1), optionRefs = ref([]), suppressOpen = ref(false)
 let timer, searchVersion = 0
 
 const labelFor = (option) => props.getLabel(option)
@@ -30,6 +30,7 @@ const visibleOptions = computed(() => {
 function selectOption(option) {
   query.value = labelFor(option)
   opened.value = false
+  activeIndex.value = -1
   emit('update:modelValue', valueFor(option))
   emit('select', option)
 }
@@ -38,17 +39,76 @@ function clear() {
   searchVersion += 1
   query.value = ''
   remoteOptions.value = []
+  activeIndex.value = -1
   emit('update:modelValue', null)
   input.value?.focus()
 }
 
 function open() {
-  if (!props.disabled) opened.value = true
+  if (!props.disabled && !suppressOpen.value) opened.value = true
+}
+
+function focusInputAfterSelection() {
+  suppressOpen.value = true
+  nextTick(() => {
+    input.value?.focus()
+    suppressOpen.value = false
+  })
+}
+
+function setOptionRef(element, index) {
+  if (element) optionRefs.value[index] = element
+}
+
+function focusOption(index) {
+  activeIndex.value = index
+  nextTick(() => optionRefs.value[index]?.focus())
 }
 
 function onKeydown(event) {
-  if (event.key === 'Escape') opened.value = false
-  if (event.key === 'Enter' && visibleOptions.value.length) { event.preventDefault(); selectOption(visibleOptions.value[0]) }
+  if (event.key === 'Escape') {
+    opened.value = false
+    return
+  }
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    if (!opened.value) opened.value = true
+    if (!visibleOptions.value.length) return
+    event.preventDefault()
+    const inputHasFocus = document.activeElement === input.value
+    if (event.key === 'ArrowDown' && inputHasFocus) {
+      focusOption(activeIndex.value >= 0 ? activeIndex.value : 0)
+      return
+    }
+    const direction = event.key === 'ArrowDown' ? 1 : -1
+    const nextIndex = activeIndex.value + direction
+    focusOption((nextIndex + visibleOptions.value.length) % visibleOptions.value.length)
+    return
+  }
+  if (event.key === 'Enter' && opened.value && visibleOptions.value.length) {
+    event.preventDefault()
+    selectOption(visibleOptions.value[activeIndex.value >= 0 ? activeIndex.value : 0])
+  }
+}
+
+function onOptionKeydown(event, index) {
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    selectOption(visibleOptions.value[index])
+    focusInputAfterSelection()
+    return
+  }
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    opened.value = false
+    input.value?.focus()
+    return
+  }
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault()
+    const direction = event.key === 'ArrowDown' ? 1 : -1
+    const nextIndex = index + direction
+    focusOption((nextIndex + visibleOptions.value.length) % visibleOptions.value.length)
+  }
 }
 
 function onOutside(event) {
@@ -56,6 +116,7 @@ function onOutside(event) {
 }
 
 watch(query, (value) => {
+  activeIndex.value = -1
   if (!props.loadOptions) return
   const version = ++searchVersion
   clearTimeout(timer)
@@ -70,6 +131,10 @@ watch(query, (value) => {
       if (version === searchVersion) loading.value = false
     }
   }, 250)
+})
+
+watch(visibleOptions, (options) => {
+  activeIndex.value = options.length ? 0 : -1
 })
 
 watch(() => props.modelValue, (value) => {
@@ -88,7 +153,7 @@ onBeforeUnmount(() => { clearTimeout(timer); document.removeEventListener('mouse
       <div v-if="loading" class="search-select-state"><span class="spinner"></span>Загрузка…</div>
       <div v-else-if="loadOptions && query.trim().length < minSearchLength" class="search-select-state">Введите минимум {{ minSearchLength }} символа</div>
       <div v-else-if="!visibleOptions.length" class="search-select-state">Ничего не найдено</div>
-      <button v-for="option in visibleOptions" v-else :key="String(valueFor(option))" type="button" class="search-select-option" @mousedown.prevent="selectOption(option)">{{ labelFor(option) }}</button>
+      <button v-for="(option, index) in visibleOptions" v-else :key="String(valueFor(option))" :ref="(element) => setOptionRef(element, index)" type="button" class="search-select-option" :class="{ active: index === activeIndex }" @focus="activeIndex = index" @mouseenter="activeIndex = index" @keydown="onOptionKeydown($event, index)" @mousedown.prevent="selectOption(option)">{{ labelFor(option) }}</button>
     </div>
   </div>
 </template>

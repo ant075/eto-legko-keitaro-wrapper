@@ -99,7 +99,22 @@ h1, h2 {
     padding: 24px 0;
 }
 
+.campaign-panel {
+    position: relative;
+}
+
+.campaign-list-loading {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    gap: 10px;
+    background: #fffffff0;
+}
+
 .spinner {
+    display: inline-block;
     width: 20px;
     height: 20px;
     border: 3px solid #dbe3ef;
@@ -310,7 +325,14 @@ h1, h2 {
     background: #eef4ff;
 }
 
+.search-select-option.active {
+    background: #eef4ff;
+}
+
 .search-select-state {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     padding: 10px;
     color: #68707d;
     font-size: .9rem;
