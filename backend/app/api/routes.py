@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.db.session import get_db
 from app.integrations.training_api import TrainingApiClient, TrainingApiError
 from app.models import Country
 from app.schemas.campaign import CampaignCreate, CampaignResponse
