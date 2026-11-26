@@ -3,6 +3,8 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   server: {
+    port: 8080,
+    strictPort: true,
     proxy: {
       '/api': 'http://backend:8000',
     },

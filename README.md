@@ -17,5 +17,5 @@ Backend healthcheck: http://localhost:8000/api/health
 docker compose -f docker-compose.dev.yml up -d --build
 ```
 
-В dev-режиме frontend доступен по адресу http://localhost:5173, backend — по адресу http://localhost:8000. Изменения исходников frontend и backend подхватываются автоматически. Dev- и production-конфигурации используют один volume PostgreSQL `postgres_data`.
+В dev-режиме frontend доступен по адресу http://localhost:8080, backend — по адресу http://localhost:8000. Изменения исходников frontend и backend подхватываются автоматически. Dev- и production-конфигурации используют один volume PostgreSQL `postgres_data`.
 
