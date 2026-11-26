@@ -8,6 +8,9 @@ dependencies = [
   "Babel>=2.16,<3", "pycountry>=24.6,<25", "sqlalchemy>=2.0,<3", "uvicorn[standard]>=0.32,<1"
 ]
 
+[project.optional-dependencies]
+test = ["pytest>=8.3,<9", "pytest-asyncio>=0.24,<1"]
+
 [build-system]
 requires = ["setuptools>=75"]
 build-backend = "setuptools.build_meta"

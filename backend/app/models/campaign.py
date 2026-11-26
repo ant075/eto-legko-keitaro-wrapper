@@ -20,8 +20,18 @@ class Campaign(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now(), index=True)
     country = relationship("Country", lazy="joined")
-    offers = relationship("CampaignOffer", back_populates="campaign", cascade="all, delete-orphan")
-    publications = relationship("CampaignOfferPublication", back_populates="campaign", cascade="all, delete-orphan")
+    offers = relationship(
+        "CampaignOffer",
+        back_populates="campaign",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    publications = relationship(
+        "CampaignOfferPublication",
+        back_populates="campaign",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
     @property
     def country_name(self) -> str:

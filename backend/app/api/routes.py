@@ -165,5 +165,6 @@ async def sync_campaign_offers(campaign_id: int, db: Session = Depends(get_db)):
     try:
         return await offers.sync_from_training_api(db, campaign_id)
     except offers.OfferOperationError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        status_code = 400 if "неподтверждёнными изменениями" in str(exc) else 502
+        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
