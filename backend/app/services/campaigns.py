@@ -137,8 +137,13 @@ def get_campaign(db: Session, campaign_id: int) -> Campaign | None:
 
 
 async def delete_campaign(db: Session, campaign: Campaign) -> None:
+    campaign_id = campaign.id
+
+    # Завершаем read-транзакцию до внешнего HTTP-запроса, чтобы не удерживать
+    # соединение с БД, пока внешний API обрабатывает запрос.
+    db.commit()
     async with TrainingApiClient() as api:
-        await api.delete_campaign(campaign.id)
+        await api.delete_campaign(campaign_id)
     db.delete(campaign)
     db.commit()
 

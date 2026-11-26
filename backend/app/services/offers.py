@@ -153,20 +153,29 @@ def _replace_publication_snapshot(db: Session, campaign: Campaign, offers: list[
 async def publish(db: Session, campaign_id: int) -> OfferOperationResponse:
     campaign = _require_campaign(db, campaign_id)
     offers = _offer_rows(db, campaign_id)
+    stream_id = campaign.offers_stream_id
     payload = {
         "filters": [],
-        "offers": [{"offer_id": item.offer_id, "share": item.weight, "state": "active"} for item in offers if
-                   not item.is_deleted],
+        "offers": [{"offer_id": item.offer_id, "share": item.weight, "state": "active"}
+                   for item in offers if not item.is_deleted],
     }
+
+    # Завершаем read-транзакцию до внешнего HTTP-запроса, чтобы не удерживать
+    # соединение с БД, пока внешний API обрабатывает запрос. При
+    # expire_on_commit=False загруженные объекты остаются доступными в памяти.
+    db.commit()
     async with TrainingApiClient() as api:
         try:
-            await api.update_stream(campaign.offers_stream_id, payload)
+            await api.update_stream(stream_id, payload)
         except TrainingApiError as exc:
             raise OfferOperationError("Не удалось опубликовать офферы в API учебного стенда") from exc
+
+    # Конкурентные изменения для кампании не поддерживаются: предполагается,
+    # что с одной кампанией одновременно работает только один пользователь.
     _replace_publication_snapshot(db, campaign, offers)
     campaign.is_dirty = False
     db.commit()
-    return _response(campaign, _offer_rows(db, campaign_id))
+    return _response(campaign, offers)
 
 
 def cancel(db: Session, campaign_id: int) -> OfferOperationResponse:
@@ -193,12 +202,19 @@ async def sync_from_training_api(db: Session, campaign_id: int) -> OfferOperatio
     campaign = _require_campaign(db, campaign_id)
     if campaign.is_dirty:
         raise OfferOperationError("Нельзя синхронизировать кампанию с неподтверждёнными изменениями")
+    stream_id = campaign.offers_stream_id
+    offers = _offer_rows(db, campaign_id)
+
+    # Завершаем read-транзакцию до внешнего HTTP-запроса, чтобы не удерживать
+    # соединение с БД, пока внешний API обрабатывает запрос. При
+    # expire_on_commit=False загруженные объекты остаются доступными в памяти.
+    db.commit()
     async with TrainingApiClient() as api:
         try:
-            stream = await api.get_stream(campaign.offers_stream_id)
+            stream = await api.get_stream(stream_id)
         except TrainingApiError as exc:
             raise OfferOperationError("Не удалось получить поток из API учебного стенда") from exc
-    current = {offer.offer_id: offer for offer in _offer_rows(db, campaign_id)}
+    current = {offer.offer_id: offer for offer in offers}
     seen: set[int] = set()
     for position, external in enumerate(stream.get("offers", []), start=1):
         offer_id = int(external["offer_id"])
@@ -208,6 +224,7 @@ async def sync_from_training_api(db: Session, campaign_id: int) -> OfferOperatio
             offer = CampaignOffer(campaign_id=campaign_id, offer_id=offer_id, name=str(offer_id), position=position,
                                   is_pinned=False, is_deleted=False, weight=0)
             db.add(offer)
+            current[offer_id] = offer
             was_pinned = False
             previous_weight = None
         else:
@@ -224,8 +241,9 @@ async def sync_from_training_api(db: Session, campaign_id: int) -> OfferOperatio
             offer.is_deleted = True
             offer.weight = 0
             offer.is_pinned = False
+    offers = sorted(current.values(), key=lambda offer: (offer.is_deleted, offer.position))
     db.flush()
-    _replace_publication_snapshot(db, campaign, _offer_rows(db, campaign_id))
+    _replace_publication_snapshot(db, campaign, offers)
     campaign.is_dirty = False
     db.commit()
-    return _response(campaign, _offer_rows(db, campaign_id))
+    return _response(campaign, offers)
