@@ -1,0 +1,94 @@
+# Примеры запросов к API учебного стенда
+
+POST /campaigns
+{
+    "name":"первая",
+    "type":"position",
+    "state":"active",
+    "cost_type":"CPC",
+    "cost_value":0,
+    "cost_currency":"USD",
+    "cost_auto":true,
+    "group_id":10332,
+    "traffic_source_id":836,
+    "domain_id":1813
+}
+
+ответ:
+{"id":258,"alias":"1f1e57b0","name":"первая","type":"position","uniqueness_method":"ip","cookies_ttl":24,"position":9999,"cost_type":"CPC","cost_value":0,"cost_currency":"USD","bind_visitors":"","token":"88ecf74b8bc0a0dd3063e89fead9e35937ce","cost_auto":true,"notes":"","parameters":{},"uniqueness_use_cookies":true,"traffic_loss":0,"bypass_cache":false,"uniqueness_param":"","state":"active","group_id":10332,"traffic_source_id":836,"domain_id":1813,"created_at":"2026-11-25 07:27:44","updated_at":"2026-11-25 07:27:44","domain":"https://kt-emulator.test/","postbacks":[],"group":"FORTESTS"}
+
+
+POST /streams
+{
+"campaign_id": 258,
+"name": "Redirect by country",
+"type": "forced",
+"state": "active",
+"schema": "redirect",
+"action_type": "http",
+"action_payload": "https://google.com/",
+"collect_clicks": true,
+"filter_or": false,
+"offer_selection": "before_click",
+"filters": [
+{
+"name": "country",
+"mode": "accept",
+"payload": [
+"RU"
+]
+}
+],
+"offers": []
+}
+
+ответ
+{"id":508,"name":"Redirect by country","campaign_id":258,"position":1,"state":"active","created_at":"2026-11-25 08:16:45","type":"forced","action_options":null,"comments":null,"action_type":"http","action_payload":"https://google.com/","schema":"redirect","collect_clicks":true,"filter_or":false,"weight":0,"offer_selection":"before_click","filters":[{"id":279,"stream_id":508,"name":"country","mode":"accept","payload":["RU"],"oid":279}],"triggers":[],"landings":[],"offers":[]}
+
+
+POST /streams
+{
+    "campaign_id":258,
+    "name":"offers","type":"regular","state":"active","schema":"landings","action_type":"http","action_payload":null,"collect_clicks":true,"filter_or":false,"offer_selection":"before_click","filters":[],
+    "offers":[
+        {
+            "offer_id":18012,
+            "share":50,
+            "state":"active"
+        },
+        {
+            "offer_id":18006,
+            "share":50,
+            "state":"active"
+        }
+    ]
+}
+
+
+POST /streams
+{"campaign_id":258,"name":"with offers","type":"regular","state":"active","schema":"landings","action_type":"http","action_payload":null,"collect_clicks":true,"filter_or":false,"offer_selection":"before_click","filters":[],"offers":[{"offer_id":18011,"share":34,"state":"active"},{"offer_id":18113,"share":33,"state":"active"},{"offer_id":18114,"share":33,"state":"active"}]}
+ответ
+{"id":526,"name":"with offers","campaign_id":258,"position":2,"state":"active","created_at":"2026-11-25 09:11:43","type":"regular","action_options":null,"comments":null,"action_type":"http","action_payload":null,"schema":"landings","collect_clicks":true,"filter_or":false,"weight":0,"offer_selection":"before_click","filters":[],"triggers":[],"landings":[],"offers":[{"id":848,"stream_id":526,"offer_id":18011,"state":"active","share":34,"created_at":"2026-11-25 09:11:43","updated_at":"2026-11-25 09:11:43"},{"id":849,"stream_id":526,"offer_id":18113,"state":"active","share":33,"created_at":"2026-11-25 09:11:43","updated_at":"2026-11-25 09:11:43"},{"id":850,"stream_id":526,"offer_id":18114,"state":"active","share":33,"created_at":"2026-11-25 09:11:43","updated_at":"2026-11-25 09:11:43"}]}
+
+
+curl -X PUT https://keitaro-for-tests.etolegko.com/admin_api/v1/streams/526 \
+ -H "Api-Key: 02fb6f046102f8feee686f2bc94a82e4" -H "Content-Type: application/json" \
+ -d '{"campaign_id":258,"name":"with offers","type":"regular","position":2,"state":"active","schema":"landings","action_type":"http","action_payload":null,"collect_clicks":true,"filter_or":false,"offer_selection":"before_click","filters":[],"offers": [{"offer_id":18011,"share":25,"state":"active"},{"offer_id":18113,"share":38,"state":"active"},{"offer_id":18114,"share":37,"state":"active"}]}'
+
+curl -i -X PUT https://keitaro-for-tests.etolegko.com/admin_api/v1/streams/526 -H "Api-Key: 02fb6f046102f8feee686f2bc94a82e4" -H "Content-Type: application/json" -d '{"name":"with offers","campaign_id":258,"state":"active","type":"regular","action_type":"http","action_payload":null,"schema":"landings","collect_clicks":true,"filter_or":false,"weight":0,"offer_selection":"before_click","filters":[],"triggers":[],"landings":[],"offers":[{"stream_id":526,"offer_id":18011,"state":"active","share":35},{"stream_id":526,"offer_id":18113,"state":"active","share":35},{"stream_id":526,"offer_id":18114,"state":"active","share":30}]}'
+
+curl -i -X PUT https://keitaro-for-tests.etolegko.com/admin_api/v1/streams/526 \
+ -H "Api-Key: 02fb6f046102f8feee686f2bc94a82e4" -H "Content-Type: application/json" \
+ -d '{"name":"with offers","campaign_id":258,"state":"active","type":"regular","action_type":"http","action_payload":null,"schema":"landings","collect_clicks":true,"filter_or":false,"weight":0,"offer_selection":"before_click","filters":[],"offers":[{"stream_id":526,"offer_id":18011,"state":"active","share":30},{"stream_id":526,"offer_id":18113,"state":"active","share":30},{"stream_id":526,"offer_id":18114,"state":"active","share":40}]}'
+
+curl -i -X PUT https://keitaro-for-tests.etolegko.com/admin_api/v1/streams/526 \
+ -H "Api-Key: 02fb6f046102f8feee686f2bc94a82e4" -H "Content-Type: application/json" \
+ -d '{"name":"with offers","campaign_id":258,"state":"active","type":"regular","action_type":"http","schema":"landings","collect_clicks":true,"filter_or":false,"weight":0,"offer_selection":"before_click","filters":[],"offers":[{"stream_id":526,"offer_id":18011,"state":"active","share":40},{"stream_id":526,"offer_id":18113,"state":"active","share":30},{"stream_id":526,"offer_id":18114,"state":"active","share":30}]}'
+
+curl -X PUT https://keitaro-for-tests.etolegko.com/admin_api/v1/streams/526 \
+ -H "Api-Key: 02fb6f046102f8feee686f2bc94a82e4" -H "Content-Type: application/json" \
+ -d '{"campaign_id":258,"name":"with offers","type":"regular","position":2,"state":"active","schema":"landings","action_type":"http","action_payload":null,"collect_clicks":true,"filter_or":false,"offer_selection":"before_click","filters":[],"offers": [{"offer_id":18011,"share":25,"state":"active"},{"offer_id":18113,"share":38,"state":"active"},{"offer_id":18114,"share":37,"state":"active"}]}'
+
+curl -X PUT https://keitaro-for-tests.etolegko.com/admin_api/v1/streams/526 \
+ -H "Api-Key: 02fb6f046102f8feee686f2bc94a82e4" -H "Content-Type: application/json" \
+ -d '{"filters":[],"offers": [{"offer_id":18011,"share":23,"state":"active"},{"offer_id":18113,"share":39,"state":"active"},{"offer_id":18114,"share":38,"state":"active"}]}'
