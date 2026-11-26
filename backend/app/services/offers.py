@@ -56,6 +56,17 @@ def _require_campaign(db: Session, campaign_id: int) -> Campaign:
     return campaign
 
 
+def _require_campaign_for_update(db: Session, campaign_id: int) -> Campaign:
+    campaign = db.scalar(
+        select(Campaign)
+        .where(Campaign.id == campaign_id)
+        .with_for_update(of=Campaign)
+    )
+    if campaign is None:
+        raise OfferOperationError("Кампания не найдена")
+    return campaign
+
+
 def list_offers(db: Session, campaign_id: int) -> OfferOperationResponse:
     campaign = _require_campaign(db, campaign_id)
     return _response(campaign, _offer_rows(db, campaign_id))
@@ -84,7 +95,7 @@ async def search_available_offers(db: Session, campaign_id: int, query: str) -> 
 
 
 def set_pinned(db: Session, campaign_id: int, offer_id: int, is_pinned: bool) -> OfferOperationResponse:
-    campaign = _require_campaign(db, campaign_id)
+    campaign = _require_campaign_for_update(db, campaign_id)
     offer = db.get(CampaignOffer, (campaign_id, offer_id))
     if offer is None:
         raise OfferOperationError("Оффер не найден в кампании")
@@ -96,7 +107,7 @@ def set_pinned(db: Session, campaign_id: int, offer_id: int, is_pinned: bool) ->
 
 
 def change_deleted(db: Session, campaign_id: int, offer_id: int, is_deleted: bool) -> OfferOperationResponse:
-    campaign = _require_campaign(db, campaign_id)
+    campaign = _require_campaign_for_update(db, campaign_id)
     offer = db.get(CampaignOffer, (campaign_id, offer_id))
     if offer is None:
         raise OfferOperationError("Оффер не найден в кампании")
@@ -111,7 +122,7 @@ def change_deleted(db: Session, campaign_id: int, offer_id: int, is_deleted: boo
 
 
 def add_offer(db: Session, campaign_id: int, offer_id: int, name: str) -> OfferOperationResponse:
-    campaign = _require_campaign(db, campaign_id)
+    campaign = _require_campaign_for_update(db, campaign_id)
     if db.get(CampaignOffer, (campaign_id, offer_id)) is not None:
         raise OfferOperationError("Оффер уже есть в кампании")
     current = _offer_rows(db, campaign_id)
@@ -179,7 +190,7 @@ async def publish(db: Session, campaign_id: int) -> OfferOperationResponse:
 
 
 def cancel(db: Session, campaign_id: int) -> OfferOperationResponse:
-    campaign = _require_campaign(db, campaign_id)
+    campaign = _require_campaign_for_update(db, campaign_id)
     snapshots = list(
         db.scalars(select(CampaignOfferPublication).where(CampaignOfferPublication.campaign_id == campaign_id)))
     snapshot_ids = {item.offer_id for item in snapshots}
