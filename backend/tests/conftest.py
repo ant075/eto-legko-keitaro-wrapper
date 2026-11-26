@@ -14,7 +14,6 @@ os.environ.setdefault("API_BASE_URL", "https://training-api.test/admin_api/v1")
 os.environ.setdefault("REDIRECT_TARGET_URL", "https://google.com")
 os.environ.setdefault("DATABASE_URL", "sqlite://")
 
-from app.api.routes import router
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
