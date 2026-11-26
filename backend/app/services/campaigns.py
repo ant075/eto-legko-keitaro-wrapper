@@ -1,12 +1,18 @@
 from collections.abc import Mapping
 
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.integrations.training_api import TrainingApiClient, TrainingApiError
 from app.models import Campaign, CampaignOffer, CampaignOfferPublication
-from app.schemas.campaign import CampaignCreate
+from app.schemas.campaign import (
+    CampaignCreate,
+    ExternalCampaignResponse,
+    ExternalOfferDetails,
+    ExternalStreamCreatedResponse,
+)
 
 
 class CampaignCreationError(RuntimeError):
@@ -63,14 +69,20 @@ async def create_campaign(db: Session, data: CampaignCreate) -> Campaign:
 
     try:
         async with TrainingApiClient() as api:
-            campaign = await api.create_campaign(_campaign_payload(data))
-            campaign_id = int(campaign["id"])
+            campaign = ExternalCampaignResponse.model_validate(
+                await api.create_campaign(_campaign_payload(data))
+            )
+            campaign_id = campaign.id
             redirect_payload["campaign_id"] = campaign_id
-            redirect_stream = await api.create_stream(redirect_payload)
+            redirect_stream = ExternalStreamCreatedResponse.model_validate(
+                await api.create_stream(redirect_payload)
+            )
             offers_payload["campaign_id"] = campaign_id
-            offers_stream = await api.create_stream(offers_payload)
-            external_offer = await api.get_offer(data.offer_id)
-    except (TrainingApiError, KeyError, TypeError, ValueError) as exc:
+            offers_stream = ExternalStreamCreatedResponse.model_validate(
+                await api.create_stream(offers_payload)
+            )
+            external_offer = ExternalOfferDetails.model_validate(await api.get_offer(data.offer_id))
+    except (TrainingApiError, ValidationError, TypeError, ValueError) as exc:
         if campaign_id is not None:
             try:
                 async with TrainingApiClient() as api:
@@ -84,20 +96,20 @@ async def create_campaign(db: Session, data: CampaignCreate) -> Campaign:
     try:
         local_campaign = Campaign(
             id=campaign_id,
-            name=campaign["name"],
-            alias=campaign.get("alias"),
+            name=campaign.name,
+            alias=campaign.alias,
             group_id=data.group_id,
             traffic_source_id=data.traffic_source_id,
             domain_id=data.domain_id,
-            redirect_stream_id=int(redirect_stream["id"]),
-            offers_stream_id=int(offers_stream["id"]),
+            redirect_stream_id=redirect_stream.id,
+            offers_stream_id=offers_stream.id,
             country_code=data.country_code.upper(),
             is_dirty=False,
         )
         local_offer = CampaignOffer(
             campaign_id=campaign_id,
             offer_id=data.offer_id,
-            name=str(external_offer.get("name", data.offer_id)),
+            name=external_offer.name,
             weight=100,
             is_pinned=False,
             is_deleted=False,
@@ -108,7 +120,7 @@ async def create_campaign(db: Session, data: CampaignCreate) -> Campaign:
             CampaignOfferPublication(
                 campaign_id=campaign_id,
                 offer_id=data.offer_id,
-                name=str(external_offer.get("name", data.offer_id)),
+                name=external_offer.name,
                 weight=100,
                 is_deleted=False,
                 position=1,

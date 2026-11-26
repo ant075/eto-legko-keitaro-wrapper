@@ -1,18 +1,29 @@
 import asyncio
+import logging
 from collections.abc import Iterable
 
+from pydantic import ValidationError
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.integrations.training_api import TrainingApiClient, TrainingApiError
 from app.models import Campaign, CampaignOffer, CampaignOfferPublication
-from app.schemas.offer import OfferOperationResponse, OfferResponse, OfferSearchResponse
-from app.services.references import reference_cache
+from app.schemas.offer import (
+    ExternalStreamResponse,
+    OfferOperationResponse,
+    OfferResponse,
+    OfferSearchResponse,
+)
+from app.schemas.campaign import ExternalOfferDetails
+from app.services.references import parse_reference_items, reference_cache
 
 
 class OfferOperationError(RuntimeError):
     pass
+
+
+logger = logging.getLogger(__name__)
 
 
 def _offer_rows(db: Session, campaign_id: int) -> list[CampaignOffer]:
@@ -87,11 +98,13 @@ async def search_available_offers(db: Session, campaign_id: int, query: str) -> 
     used_ids = {item.offer_id for item in _offer_rows(db, campaign_id)}
     async with TrainingApiClient() as api:
         try:
-            raw_offers = await reference_cache.get("offers", api.list_offers)
+            raw_offers = parse_reference_items(
+                await reference_cache.get("offers", api.list_offers), "offers"
+            )
         except TrainingApiError as exc:
             raise OfferOperationError("Не удалось получить список офферов из API учебного стенда") from exc
-    if isinstance(raw_offers, dict):
-        raw_offers = raw_offers.get("offers", [])
+        except (TypeError, ValueError, ValidationError) as exc:
+            raise OfferOperationError("API учебного стенда вернул некорректный список офферов") from exc
     needle = query.strip().casefold()
     result = []
     for item in raw_offers:
@@ -236,39 +249,74 @@ async def sync_from_training_api(db: Session, campaign_id: int) -> OfferOperatio
     db.commit()
     async with TrainingApiClient() as api:
         try:
-            stream = await api.get_stream(stream_id)
+            stream = ExternalStreamResponse.model_validate(await api.get_stream(stream_id))
+
+            offer_ids = [external.offer_id for external in stream.offers]
+            if len(offer_ids) != len(set(offer_ids)):
+                logger.error(
+                    "API вернул дублирующиеся офферы: campaign_id=%s stream_id=%s offer_ids=%s",
+                    campaign_id,
+                    stream_id,
+                    offer_ids,
+                )
+                raise OfferOperationError(
+                    "API учебного стенда вернул дублирующиеся офферы"
+                )
 
             # GET /streams/{id} не всегда содержит имя оффера.
             # Для ещё не сохранённых у нас офферов получаем имя отдельным
             # запросом GET /offers/{id}, а не сохраняем вместо него числовой ID.
             current_ids = {offer.offer_id for offer in offers}
             missing_name_ids = {
-                int(external["offer_id"])
-                for external in stream.get("offers", [])
-                if int(external["offer_id"]) not in current_ids
-                and not external.get("name")
+                external.offer_id
+                for external in stream.offers
+                if external.offer_id not in current_ids and not external.name
             }
             reference_names: dict[int, str] = {}
             if missing_name_ids:
                 details = await asyncio.gather(
                     *(api.get_offer(offer_id) for offer_id in sorted(missing_name_ids))
                 )
+                details = [ExternalOfferDetails.model_validate(detail) for detail in details]
                 reference_names = {
-                    offer_id: str(detail["name"])
+                    offer_id: detail.name
                     for offer_id, detail in zip(sorted(missing_name_ids), details)
-                    if detail.get("name")
                 }
         except TrainingApiError as exc:
+            logger.warning(
+                "Ошибка API при синхронизации офферов: campaign_id=%s stream_id=%s "
+                "status_code=%s response=%r",
+                campaign_id,
+                stream_id,
+                exc.status_code,
+                exc.response_body,
+            )
             raise OfferOperationError("Не удалось получить данные офферов из API учебного стенда") from exc
+        except (ValidationError, TypeError, ValueError) as exc:
+            logger.exception(
+                "API вернул некорректный поток офферов: campaign_id=%s stream_id=%s",
+                campaign_id,
+                stream_id,
+            )
+            raise OfferOperationError(
+                "API учебного стенда вернул некорректный поток офферов"
+            ) from exc
     current = {offer.offer_id: offer for offer in offers}
     seen: set[int] = set()
-    for position, external in enumerate(stream.get("offers", []), start=1):
-        offer_id = int(external["offer_id"])
+    for position, external in enumerate(stream.offers, start=1):
+        offer_id = external.offer_id
         seen.add(offer_id)
         offer = current.get(offer_id)
         if offer is None:
-            name = str(external.get("name") or reference_names.get(offer_id, ""))
+            name = external.name or reference_names.get(offer_id, "")
             if not name:
+                logger.error(
+                    "Имя оффера отсутствует в ответе API и справочнике: "
+                    "campaign_id=%s stream_id=%s offer_id=%s",
+                    campaign_id,
+                    stream_id,
+                    offer_id,
+                )
                 raise OfferOperationError(f"Не найдено имя оффера {offer_id} в справочнике Keitaro")
             offer = CampaignOffer(campaign_id=campaign_id, offer_id=offer_id, name=name, position=position,
                                   is_pinned=False, is_deleted=False, weight=0)
@@ -279,8 +327,8 @@ async def sync_from_training_api(db: Session, campaign_id: int) -> OfferOperatio
         else:
             was_pinned = offer.is_pinned
             previous_weight = offer.weight
-        offer.name = str(external.get("name", offer.name))
-        external_weight = int(external.get("share", 0))
+        offer.name = external.name or offer.name
+        external_weight = external.share
         offer.is_pinned = was_pinned and previous_weight == external_weight
         offer.weight = external_weight
         offer.position = position

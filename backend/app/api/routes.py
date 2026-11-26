@@ -10,7 +10,7 @@ from app.services import campaigns
 from app.services import countries
 from app.services import offers
 from app.services.references import reference_cache
-from app.services.references import search_offers
+from app.services.references import parse_reference_items, search_offers
 
 router = APIRouter(prefix="/api")
 
@@ -23,25 +23,27 @@ def list_countries(db: Session = Depends(get_db)):
 @router.get("/references/domains")
 async def list_domains():
     async with TrainingApiClient() as api:
-        return await reference_cache.get("domains", api.list_domains)
+        return parse_reference_items(await reference_cache.get("domains", api.list_domains), "domains")
 
 
 @router.get("/references/groups")
 async def list_groups():
     async with TrainingApiClient() as api:
-        return await reference_cache.get("groups", api.list_groups)
+        return parse_reference_items(await reference_cache.get("groups", api.list_groups), "groups")
 
 
 @router.get("/references/traffic-sources")
 async def list_traffic_sources():
     async with TrainingApiClient() as api:
-        return await reference_cache.get("traffic_sources", api.list_traffic_sources)
+        return parse_reference_items(
+            await reference_cache.get("traffic_sources", api.list_traffic_sources), "traffic_sources"
+        )
 
 
 @router.get("/references/offers")
 async def list_offers():
     async with TrainingApiClient() as api:
-        return await reference_cache.get("offers", api.list_offers)
+        return parse_reference_items(await reference_cache.get("offers", api.list_offers), "offers")
 
 
 @router.get("/references/offers/search")

@@ -30,3 +30,18 @@ class CampaignResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
+class ExternalCampaignResponse(BaseModel):
+    id: int = Field(gt=0)
+    name: str = Field(min_length=1)
+    alias: str | None = None
+
+
+class ExternalStreamCreatedResponse(BaseModel):
+    id: int = Field(gt=0)
+
+
+class ExternalOfferDetails(BaseModel):
+    id: int = Field(gt=0)
+    name: str = Field(min_length=1)
+

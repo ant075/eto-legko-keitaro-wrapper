@@ -160,7 +160,7 @@ curl -X POST https://keitaro-for-tests.etolegko.com/admin_api/v1/streams \
             {
                 "name": "country",
                 "mode": "accept",
-                "payload": ["RU"]
+                "payload": ["<код-страны-по-ISO-3166-1-alpha-2>"]
             }
         ]
     }

@@ -23,6 +23,17 @@ class OfferSearchResponse(BaseModel):
     name: str
 
 
+class ExternalStreamOffer(BaseModel):
+    offer_id: int = Field(gt=0)
+    share: int = Field(ge=0, le=100)
+    name: str | None = None
+    state: str | None = None
+
+
+class ExternalStreamResponse(BaseModel):
+    offers: list[ExternalStreamOffer]
+
+
 class OfferOperationResponse(BaseModel):
     campaign_id: int
     is_dirty: bool

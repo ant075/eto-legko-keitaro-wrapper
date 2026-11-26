@@ -3,6 +3,8 @@ from collections.abc import Awaitable, Callable
 from time import monotonic
 from typing import Any
 
+from app.schemas.reference import ExternalReferenceItem
+
 
 class ReferenceCache:
     """Процессный TTL-кеш ответов справочников учебного API."""
@@ -40,14 +42,21 @@ class ReferenceCache:
 reference_cache = ReferenceCache()
 
 
+def parse_reference_items(raw: Any, key: str) -> list[dict[str, object]]:
+    if isinstance(raw, dict):
+        raw = raw.get(key, [])
+    if not isinstance(raw, list):
+        raise ValueError(f"API учебного стенда вернул некорректный список {key}")
+    return [ExternalReferenceItem.model_validate(item).model_dump() for item in raw]
+
+
 async def search_offers(api_client, query: str) -> list[dict[str, object]]:
-    raw_offers = await reference_cache.get("offers", api_client.list_offers)
-    if isinstance(raw_offers, dict):
-        raw_offers = raw_offers.get("offers", [])
+    raw_offers = parse_reference_items(
+        await reference_cache.get("offers", api_client.list_offers), "offers"
+    )
     needle = query.strip().casefold()
     return [
-        {"id": item.get("id", item.get("offer_id")), "name": item.get("name", "")}
+        {"id": item["id"], "name": item["name"]}
         for item in raw_offers
-        if item.get("id", item.get("offer_id")) is not None
-           and needle in str(item.get("name", "")).casefold()
+        if needle in str(item["name"]).casefold()
     ]
