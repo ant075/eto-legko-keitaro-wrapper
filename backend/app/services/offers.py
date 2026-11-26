@@ -29,6 +29,13 @@ def _response(campaign: Campaign, offers: Iterable[CampaignOffer]) -> OfferOpera
     )
 
 
+def _normalize_positions(offers: list[CampaignOffer]) -> None:
+    """Сохраняет единую сплошную последовательность: активные, затем удалённые."""
+    ordered = sorted(offers, key=lambda item: (item.is_deleted, item.position))
+    for position, offer in enumerate(ordered, start=1):
+        offer.position = position
+
+
 def _recalculate_weights(offers: list[CampaignOffer]) -> None:
     active_pinned = [offer for offer in offers if not offer.is_deleted and offer.is_pinned]
     active_unpinned = [offer for offer in offers if not offer.is_deleted and not offer.is_pinned]
@@ -115,7 +122,11 @@ def change_deleted(db: Session, campaign_id: int, offer_id: int, is_deleted: boo
     if is_deleted:
         offer.weight = 0
         offer.is_pinned = False
-    _recalculate_weights(_offer_rows(db, campaign_id))
+    else:
+        offer.position = max((item.position for item in _offer_rows(db, campaign_id)), default=0) + 1
+    current = _offer_rows(db, campaign_id)
+    _normalize_positions(current)
+    _recalculate_weights(current)
     campaign.is_dirty = True
     db.commit()
     return _response(campaign, _offer_rows(db, campaign_id))
@@ -137,6 +148,7 @@ def add_offer(db: Session, campaign_id: int, offer_id: int, name: str) -> OfferO
     )
     db.add(offer)
     current.append(offer)
+    _normalize_positions(current)
     _recalculate_weights(current)
     campaign.is_dirty = True
     try:
@@ -253,6 +265,7 @@ async def sync_from_training_api(db: Session, campaign_id: int) -> OfferOperatio
             offer.weight = 0
             offer.is_pinned = False
     offers = sorted(current.values(), key=lambda offer: (offer.is_deleted, offer.position))
+    _normalize_positions(offers)
     db.flush()
     _replace_publication_snapshot(db, campaign, offers)
     campaign.is_dirty = False
