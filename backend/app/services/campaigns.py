@@ -32,6 +32,8 @@ async def create_campaign(db: Session, data: CampaignCreate) -> Campaign:
     settings = get_settings()
     campaign_id: int | None = None
 
+    # "type": "forced" выбран сознательно, чтоб фильтр по стране срабатывал гарантировано
+    # вне зависимости от очерёдности двух потоков
     redirect_payload = {
         "name": "Redirect by country",
         "type": "forced",
