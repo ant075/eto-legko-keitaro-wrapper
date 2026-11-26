@@ -57,20 +57,43 @@ watch(() => [props.loading, props.creating], focusNameInput)
       <fieldset :disabled="loading || creating" class="modal-fields">
         <h2>Новая кампания</h2>
         <input ref="nameInput" v-model="form.name" required autofocus placeholder="Название">
-        <SearchSelect v-model="form.country_code" :options="countries" value-key="code" :get-label="countryLabel" :search-fields="['code', 'name_ru']" placeholder="Страна" />
-        <select v-model="form.domain_id" required>
-          <option disabled value="">Домен</option>
-          <option v-for="item in domains" :key="item.id" :value="item.id">{{ item.name }}</option>
-        </select>
-        <select v-model="form.group_id" required>
-          <option disabled value="">Группа</option>
-          <option v-for="item in groups" :key="item.id" :value="item.id">{{ item.name }}</option>
-        </select>
-        <select v-model="form.traffic_source_id" required>
-          <option disabled value="">Источник</option>
-          <option v-for="item in sources" :key="item.id" :value="item.id">{{ item.name }}</option>
-        </select>
-        <SearchSelect v-model="form.offer_id" :load-options="loadOffers" value-key="id" :get-label="(offer) => offer.name" :min-search-length="2" placeholder="Оффер" />
+        <SearchSelect
+            v-model="form.country_code"
+            :options="countries"
+            value-key="code"
+            :get-label="countryLabel"
+            :search-fields="['code', 'name_ru']"
+            placeholder="Страна"
+        />
+        <SearchSelect
+            v-model="form.domain_id"
+            :options="domains"
+            value-key="id"
+            :search-fields="['name']"
+            placeholder="Домен"
+        />
+        <SearchSelect
+            v-model="form.group_id"
+            :options="groups"
+            value-key="id"
+            :search-fields="['name']"
+            placeholder="Группа"
+        />
+        <SearchSelect
+            v-model="form.traffic_source_id"
+            :options="sources"
+            value-key="id"
+            :search-fields="['name']"
+            placeholder="Источник"
+        />
+        <SearchSelect
+            v-model="form.offer_id"
+            :load-options="loadOffers"
+            value-key="id"
+            :get-label="(offer) => offer.name"
+            :min-search-length="2"
+            placeholder="Оффер"
+        />
         <div class="modal-actions">
           <button type="button" @click="close">Отмена</button>
           <button type="submit" :disabled="!formValid || creating">Создать</button>
