@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Iterable
 
 from sqlalchemy import delete, select
@@ -236,8 +237,29 @@ async def sync_from_training_api(db: Session, campaign_id: int) -> OfferOperatio
     async with TrainingApiClient() as api:
         try:
             stream = await api.get_stream(stream_id)
+
+            # GET /streams/{id} не всегда содержит имя оффера.
+            # Для ещё не сохранённых у нас офферов получаем имя отдельным
+            # запросом GET /offers/{id}, а не сохраняем вместо него числовой ID.
+            current_ids = {offer.offer_id for offer in offers}
+            missing_name_ids = {
+                int(external["offer_id"])
+                for external in stream.get("offers", [])
+                if int(external["offer_id"]) not in current_ids
+                and not external.get("name")
+            }
+            reference_names: dict[int, str] = {}
+            if missing_name_ids:
+                details = await asyncio.gather(
+                    *(api.get_offer(offer_id) for offer_id in sorted(missing_name_ids))
+                )
+                reference_names = {
+                    offer_id: str(detail["name"])
+                    for offer_id, detail in zip(sorted(missing_name_ids), details)
+                    if detail.get("name")
+                }
         except TrainingApiError as exc:
-            raise OfferOperationError("Не удалось получить поток из API учебного стенда") from exc
+            raise OfferOperationError("Не удалось получить данные офферов из API учебного стенда") from exc
     current = {offer.offer_id: offer for offer in offers}
     seen: set[int] = set()
     for position, external in enumerate(stream.get("offers", []), start=1):
@@ -245,7 +267,10 @@ async def sync_from_training_api(db: Session, campaign_id: int) -> OfferOperatio
         seen.add(offer_id)
         offer = current.get(offer_id)
         if offer is None:
-            offer = CampaignOffer(campaign_id=campaign_id, offer_id=offer_id, name=str(offer_id), position=position,
+            name = str(external.get("name") or reference_names.get(offer_id, ""))
+            if not name:
+                raise OfferOperationError(f"Не найдено имя оффера {offer_id} в справочнике Keitaro")
+            offer = CampaignOffer(campaign_id=campaign_id, offer_id=offer_id, name=name, position=position,
                                   is_pinned=False, is_deleted=False, weight=0)
             db.add(offer)
             current[offer_id] = offer
