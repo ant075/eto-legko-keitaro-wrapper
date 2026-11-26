@@ -68,28 +68,11 @@ class TrainingApiClient:
             return None
         return response.json()
 
-    async def list_campaigns(self, *, offset: int = 0, limit: int = 100) -> Any:
-        return await self._request("GET", "/campaigns", params={"offset": offset, "limit": limit})
-
     async def create_campaign(self, payload: Mapping[str, Any]) -> Any:
         return await self._request("POST", "/campaigns", json=dict(payload))
 
-    async def get_campaign(self, campaign_id: int) -> Any:
-        return await self._request("GET", f"/campaigns/{campaign_id}")
-
-    async def update_campaign(self, campaign_id: int, payload: Mapping[str, Any]) -> Any:
-        return await self._request("PUT", f"/campaigns/{campaign_id}", json=dict(payload))
-
     async def delete_campaign(self, campaign_id: int) -> Any:
         return await self._request("DELETE", f"/campaigns/{campaign_id}")
-
-    async def set_campaign_state(self, campaign_id: int, state: str) -> Any:
-        if state not in {"enable", "disable"}:
-            raise ValueError("state must be enable or disable")
-        return await self._request("POST", f"/campaigns/{campaign_id}/{state}")
-
-    async def get_campaign_streams(self, campaign_id: int) -> Any:
-        return await self._request("GET", f"/campaigns/{campaign_id}/streams")
 
     async def create_stream(self, payload: Mapping[str, Any]) -> Any:
         return await self._request("POST", "/streams", json=dict(payload))
@@ -99,14 +82,6 @@ class TrainingApiClient:
 
     async def update_stream(self, stream_id: int, payload: Mapping[str, Any]) -> Any:
         return await self._request("PUT", f"/streams/{stream_id}", json=dict(payload))
-
-    async def delete_stream(self, stream_id: int) -> Any:
-        return await self._request("DELETE", f"/streams/{stream_id}")
-
-    async def set_stream_state(self, stream_id: int, state: str) -> Any:
-        if state not in {"enable", "disable"}:
-            raise ValueError("state must be enable or disable")
-        return await self._request("POST", f"/streams/{stream_id}/{state}")
 
     async def list_offers(self) -> Any:
         return await self._request("GET", "/offers")
