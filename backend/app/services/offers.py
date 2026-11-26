@@ -210,8 +210,9 @@ def cancel(db: Session, campaign_id: int) -> OfferOperationResponse:
         if offer.offer_id not in snapshot_ids:
             db.delete(offer)
     db.flush()
+    offers_by_id = {offer.offer_id: offer for offer in _offer_rows(db, campaign_id)}
     for snapshot in snapshots:
-        offer = db.get(CampaignOffer, (campaign_id, snapshot.offer_id))
+        offer = offers_by_id[snapshot.offer_id]
         offer.name = snapshot.name
         offer.weight = snapshot.weight
         offer.is_deleted = snapshot.is_deleted
