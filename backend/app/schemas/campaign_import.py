@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -18,6 +20,8 @@ class ExternalImportCampaign(ExternalImportModel):
     group_id: int = Field(gt=0)
     traffic_source_id: int = Field(gt=0)
     domain_id: int = Field(gt=0)
+    created_at: datetime
+    updated_at: datetime
 
 
 class ExternalImportFilter(ExternalImportModel):

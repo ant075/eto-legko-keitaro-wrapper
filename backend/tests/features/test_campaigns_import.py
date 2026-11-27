@@ -11,6 +11,8 @@ def _external_campaign(campaign_id=10):
         "group_id": 2,
         "traffic_source_id": 3,
         "domain_id": 4,
+        "created_at": "2026-11-25 07:27:44",
+        "updated_at": "2026-11-26 08:31:12",
     }
 
 
@@ -66,6 +68,8 @@ async def test_import_campaigns_saves_campaign_and_syncs_offers(client, db_sessi
     assert campaign.offers_stream_id == 302
     assert campaign.country_code == "GM"
     assert campaign.is_dirty is False
+    assert campaign.created_at.isoformat(sep=" ") == "2026-11-25 07:27:44"
+    assert campaign.updated_at.isoformat(sep=" ") == "2026-11-26 08:31:12"
     assert [offer.offer_id for offer in campaign.offers] == [11]
     assert len(campaign.publications) == 1
     assert ("GET", "/campaigns", {"offset": 0, "limit": 100}) in fake_api.calls

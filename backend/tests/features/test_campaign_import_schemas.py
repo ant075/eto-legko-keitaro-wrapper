@@ -16,6 +16,7 @@ def test_import_schemas_validate_required_campaign_and_stream_data():
         "traffic_source_id": 836,
         "domain_id": 1813,
         "created_at": "2026-11-25 07:27:44",
+        "updated_at": "2026-11-25 07:27:44",
     })
     stream = ExternalImportStream.model_validate({
         "id": 508,

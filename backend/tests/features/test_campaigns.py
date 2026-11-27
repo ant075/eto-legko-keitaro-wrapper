@@ -1,6 +1,32 @@
+from datetime import datetime
+
 import pytest
 
 from app.models import Campaign
+
+
+@pytest.mark.asyncio
+async def test_list_campaigns_sorts_by_created_at_desc(client, db_session, campaign):
+    db_session.add(Campaign(
+        id=2,
+        name="Older campaign",
+        alias="older-campaign",
+        group_id=2,
+        traffic_source_id=3,
+        domain_id=4,
+        redirect_stream_id=301,
+        offers_stream_id=302,
+        country_code="GM",
+        is_dirty=False,
+        created_at=datetime(2020, 1, 1),
+        updated_at=datetime(2030, 1, 1),
+    ))
+    db_session.commit()
+
+    response = await client.get("/api/campaigns")
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.json()] == [1, 2]
 
 
 @pytest.mark.asyncio

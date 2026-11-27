@@ -371,6 +371,8 @@ async def import_campaigns(db: Session) -> CampaignImportResult:
                     offers_stream_id=candidate.offers_stream_id,
                     country_code=candidate.country_code,
                     is_dirty=False,
+                    created_at=candidate.campaign.created_at,
+                    updated_at=candidate.campaign.updated_at,
                 )
                 db.add(local_campaign)
                 db.commit()
@@ -389,7 +391,7 @@ async def import_campaigns(db: Session) -> CampaignImportResult:
 
 
 def list_campaigns(db: Session) -> list[Campaign]:
-    return list(db.scalars(select(Campaign).order_by(Campaign.updated_at.desc())))
+    return list(db.scalars(select(Campaign).order_by(Campaign.created_at.desc())))
 
 
 def get_campaign(db: Session, campaign_id: int) -> Campaign | None:
