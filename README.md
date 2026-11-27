@@ -1,10 +1,13 @@
 # Keitaro Wrapper
 
 ```bash
-cp backend/.env.example backend/.env
-# заполнить API_KEY в backend/.env
+cp backend/.env.example .env
+# заполнить API_KEY в корневом .env
 docker compose up -d --build
 ```
+
+Файл `.env` должен находиться в корне проекта: его используют Docker Compose и
+сервисы `backend` и `db` при запуске контейнеров.
 
 Frontend: http://localhost:8080  
 Backend healthcheck: http://localhost:8000/api/health

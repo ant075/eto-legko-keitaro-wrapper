@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.integrations.training_api import TrainingApiClient, TrainingApiError
 from app.schemas.campaign import CampaignCreate, CampaignResponse
+from app.schemas.campaign_import import CampaignImportResponse
 from app.schemas.reference import CountryResponse
 from app.schemas.offer import AddOfferRequest, OfferOperationResponse, OfferSearchResponse
 from app.services import campaigns
@@ -55,6 +56,20 @@ async def search_reference_offers(q: str = Query(min_length=2)):
 @router.get("/campaigns", response_model=list[CampaignResponse])
 def list_campaigns(db: Session = Depends(get_db)):
     return campaigns.list_campaigns(db)
+
+
+@router.post("/campaigns/import", response_model=CampaignImportResponse)
+async def import_campaigns(db: Session = Depends(get_db)):
+    try:
+        result = await campaigns.import_campaigns(db)
+    except campaigns.CampaignImportAlreadyInitialized as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    except campaigns.CampaignImportError as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
+    return CampaignImportResponse(
+        imported_count=result.imported_count,
+        message=result.message,
+    )
 
 
 @router.post("/campaigns", response_model=CampaignResponse, status_code=status.HTTP_201_CREATED)

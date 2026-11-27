@@ -4,7 +4,7 @@ import {api} from '../api'
 import CreateCampaignModal from '../components/CreateCampaignModal.vue'
 
 const campaigns = ref([]), countries = ref([]), domains = ref([]), groups = ref([]), sources = ref([])
-const showCreate = ref(false), loading = ref(false), campaignsLoading = ref(false), referencesLoading = ref(false),
+const showCreate = ref(false), loading = ref(false), importing = ref(false), campaignsLoading = ref(false), referencesLoading = ref(false),
     referencesLoaded = ref(false), deletingCampaignId = ref(null),
     error = ref('')
 
@@ -75,6 +75,21 @@ async function createCampaign(data) {
   }
 }
 
+async function importCampaigns() {
+  if (importing.value) return
+  try {
+    importing.value = true
+    error.value = ''
+    const result = await api.importCampaigns()
+    if (result?.message) error.value = result.message
+    await loadCampaigns()
+  } catch (err) {
+    error.value = err.message
+  } finally {
+    importing.value = false
+  }
+}
+
 async function removeCampaign(campaign) {
   if (!confirm(`Удалить кампанию «${campaign.name}»?`)) return;
   if (deletingCampaignId.value !== null) return;
@@ -94,10 +109,14 @@ onMounted(loadCampaigns)
 
 <template>
   <main class="page">
+    <div v-if="importing" class="import-loading" role="status" aria-live="polite" aria-busy="true">
+      <span class="spinner" aria-hidden="true"></span>
+      <span>Импорт кампаний…</span>
+    </div>
     <p v-if="error" class="error">{{ error }}
       <button class="link" @click="error = ''">закрыть</button>
     </p>
-    <section class="panel campaign-panel" :aria-busy="deletingCampaignId !== null">
+    <section class="panel campaign-panel" :aria-busy="deletingCampaignId !== null || importing">
       <div v-if="deletingCampaignId !== null" class="campaign-list-loading" aria-label="Удаление кампании">
         <span class="spinner"></span>
         <span>Удаление кампании…</span>
@@ -108,7 +127,12 @@ onMounted(loadCampaigns)
       </div>
       <div v-if="campaignsLoading" class="loading-state"><span class="spinner" aria-label="Загрузка"></span><span
           class="muted">Загрузка кампаний…</span></div>
-      <p v-else-if="!campaigns.length" class="muted">Кампаний пока нет.</p>
+      <div v-else-if="!campaigns.length" class="empty-campaigns">
+        <p class="muted">Кампаний пока нет.</p>
+        <button :disabled="importing" @click="importCampaigns">
+          {{ importing ? 'Импорт кампаний…' : 'Импортировать из Keitaro' }}
+        </button>
+      </div>
       <div v-else class="table-wrapper">
         <table class="campaign-table">
           <thead>

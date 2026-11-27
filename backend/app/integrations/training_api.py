@@ -68,6 +68,12 @@ class TrainingApiClient:
             return None
         return response.json()
 
+    async def list_campaigns(self, *, offset: int = 0, limit: int = 100) -> Any:
+        return await self._request("GET", "/campaigns", params={"offset": offset, "limit": limit})
+
+    async def get_campaign_streams(self, campaign_id: int) -> Any:
+        return await self._request("GET", f"/campaigns/{campaign_id}/streams")
+
     async def create_campaign(self, payload: Mapping[str, Any]) -> Any:
         return await self._request("POST", "/campaigns", json=dict(payload))
 

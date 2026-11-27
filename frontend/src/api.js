@@ -9,6 +9,7 @@ async function request(path, options = {}) {
 
 export const api = {
   campaigns: () => request('/api/campaigns'),
+  importCampaigns: () => request('/api/campaigns/import', { method: 'POST' }),
   campaign: (id) => request(`/api/campaigns/${id}`),
   createCampaign: (data) => request('/api/campaigns', { method: 'POST', body: JSON.stringify(data) }),
   deleteCampaign: (id) => request(`/api/campaigns/${id}`, { method: 'DELETE' }),

@@ -50,6 +50,16 @@ class FakeTrainingApi:
         self.calls.append(("POST", "/campaigns", payload))
         return campaign
 
+    async def list_campaigns(self, *, offset=0, limit=100):
+        self._check("list_campaigns")
+        self.calls.append(("GET", "/campaigns", {"offset": offset, "limit": limit}))
+        return self.campaigns[offset:offset + limit]
+
+    async def get_campaign_streams(self, campaign_id):
+        self._check("get_campaign_streams")
+        self.calls.append(("GET", f"/campaigns/{campaign_id}/streams", None))
+        return [stream for stream in self.streams.values() if stream.get("campaign_id") == campaign_id]
+
     async def delete_campaign(self, campaign_id):
         self._check("delete_campaign")
         self.calls.append(("DELETE", f"/campaigns/{campaign_id}", None))
