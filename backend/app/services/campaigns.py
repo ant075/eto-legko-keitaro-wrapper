@@ -247,6 +247,7 @@ def _candidate_from_streams(
     if selected is None:
         return None
     redirect_stream, offers_stream = selected
+    redirect_target_url = get_settings().redirect_target_url
 
     if any(stream.campaign_id != campaign.id for stream in streams):
         return None
@@ -255,7 +256,7 @@ def _candidate_from_streams(
         redirect_stream.state == "active"
         and redirect_stream.schema_name == "redirect"
         and redirect_stream.action_type == "http"
-        and bool(redirect_stream.action_payload and redirect_stream.action_payload.strip())
+        and redirect_stream.action_payload == redirect_target_url
         and redirect_stream.collect_clicks is True
         and redirect_stream.filter_or is False
         and redirect_stream.offer_selection == "before_click"

@@ -23,7 +23,7 @@ def _redirect_stream(campaign_id=10, stream_id=301, stream_type="forced"):
         "state": "active",
         "schema": "redirect",
         "action_type": "http",
-        "action_payload": "https://google.com/",
+        "action_payload": "https://google.com",
         "collect_clicks": True,
         "filter_or": False,
         "offer_selection": "before_click",
@@ -94,6 +94,20 @@ async def test_import_campaigns_reports_no_suitable_campaigns(client, db_session
     fake_api.streams[301] = _redirect_stream()
     fake_api.streams[302] = _offers_stream()
     fake_api.streams[302]["offers"][0]["state"] = "paused"
+
+    response = await client.post("/api/campaigns/import")
+
+    assert response.status_code == 200
+    assert response.json() == {"imported_count": 0, "message": "Нет подходящих кампаний"}
+    assert db_session.query(Campaign).count() == 0
+
+
+@pytest.mark.asyncio
+async def test_import_campaigns_rejects_different_redirect_target(client, db_session, fake_api):
+    fake_api.campaigns = [_external_campaign()]
+    fake_api.streams[301] = _redirect_stream()
+    fake_api.streams[301]["action_payload"] = "https://example.com"
+    fake_api.streams[302] = _offers_stream()
 
     response = await client.post("/api/campaigns/import")
 

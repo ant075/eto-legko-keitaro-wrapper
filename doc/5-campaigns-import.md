@@ -24,7 +24,7 @@
         "state":"active",
         "schema":"redirect",
         "action_type":"http",
-        "action_payload":"<url-редиректа>",
+        "action_payload":"<REDIRECT_TARGET_URL>",
         "collect_clicks":true,
         "filter_or":false,
         "offer_selection":"before_click",
@@ -97,6 +97,8 @@ Pydantic `BaseModel.schema()`.
 - выбирает redirect-поток по `type="forced"`, иначе по `position=1`;
 - считает второй поток offer-потоком;
 - проверяет все условия пригодности из раздела 1;
+- проверяет точное совпадение URL redirect-потока с локальной настройкой
+  `REDIRECT_TARGET_URL`;
 - проверяет наличие страны в локальном справочнике;
 - сохраняет подходящие кампании с ID потоков и кодом страны;
 - запускает `offers.sync_from_training_api` для импорта офферов.
