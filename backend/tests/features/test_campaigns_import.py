@@ -103,6 +103,26 @@ async def test_import_campaigns_reports_no_suitable_campaigns(client, db_session
 
 
 @pytest.mark.asyncio
+async def test_import_campaigns_keeps_only_active_offers(client, db_session, fake_api):
+    fake_api.campaigns = [_external_campaign()]
+    fake_api.streams[301] = _redirect_stream()
+    fake_api.streams[302] = _offers_stream()
+    fake_api.streams[302]["offers"].append({
+        "offer_id": 12,
+        "share": 0,
+        "state": "paused",
+        "name": "Beta offer",
+    })
+
+    response = await client.post("/api/campaigns/import")
+
+    assert response.status_code == 200
+    campaign = db_session.get(Campaign, 10)
+    assert [offer.offer_id for offer in campaign.offers if not offer.is_deleted] == [11]
+    assert [offer.offer_id for offer in campaign.offers if offer.is_deleted] == []
+
+
+@pytest.mark.asyncio
 async def test_import_campaigns_rejects_different_redirect_target(client, db_session, fake_api):
     fake_api.campaigns = [_external_campaign()]
     fake_api.streams[301] = _redirect_stream()

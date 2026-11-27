@@ -288,7 +288,7 @@ def _candidate_from_streams(
         and offers_stream.offer_selection == "before_click"
         and not offers_stream.filters
         and offers_stream.offers
-        and all(offer.state == "active" for offer in offers_stream.offers)
+        and any(offer.state == "active" for offer in offers_stream.offers)
     ):
         return None
 

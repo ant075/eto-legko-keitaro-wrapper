@@ -250,8 +250,11 @@ async def sync_from_training_api(db: Session, campaign_id: int) -> OfferOperatio
     async with TrainingApiClient() as api:
         try:
             stream = ExternalStreamResponse.model_validate(await api.get_stream(stream_id))
+            active_external_offers = [
+                external for external in stream.offers if external.state == "active"
+            ]
 
-            offer_ids = [external.offer_id for external in stream.offers]
+            offer_ids = [external.offer_id for external in active_external_offers]
             if len(offer_ids) != len(set(offer_ids)):
                 logger.error(
                     "API вернул дублирующиеся офферы: campaign_id=%s stream_id=%s offer_ids=%s",
@@ -269,7 +272,7 @@ async def sync_from_training_api(db: Session, campaign_id: int) -> OfferOperatio
             current_ids = {offer.offer_id for offer in offers}
             missing_name_ids = {
                 external.offer_id
-                for external in stream.offers
+                for external in active_external_offers
                 if external.offer_id not in current_ids and not external.name
             }
             reference_names: dict[int, str] = {}
@@ -303,7 +306,10 @@ async def sync_from_training_api(db: Session, campaign_id: int) -> OfferOperatio
             ) from exc
     current = {offer.offer_id: offer for offer in offers}
     seen: set[int] = set()
-    for position, external in enumerate(stream.offers, start=1):
+    active_external_offers = [
+        external for external in stream.offers if external.state == "active"
+    ]
+    for position, external in enumerate(active_external_offers, start=1):
         offer_id = external.offer_id
         seen.add(offer_id)
         offer = current.get(offer_id)
